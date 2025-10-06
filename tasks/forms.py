@@ -1,7 +1,7 @@
 
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
-from .models import CustomUser
+from .models import CustomUser, Task
 
 class CustomUserCreationForm(UserCreationForm):
     """Signup form for CustomUser. Keep role internal (users are 'user' by default)."""
@@ -16,3 +16,12 @@ class CustomUserCreationForm(UserCreationForm):
             field.widget.attrs.setdefault("class", "form-control")
         # ensure email is required
         self.fields["email"].required = True
+
+class TaskForm(forms.ModelForm):
+    class Meta:
+        model = Task
+        fields = ["title", "description", "due_date", "assigned_to", "is_completed"]
+        widgets = {
+            "due_date": forms.DateTimeInput(attrs={"type": "date"}),
+            "description": forms.Textarea(attrs={"rows": 3}),
+        }
