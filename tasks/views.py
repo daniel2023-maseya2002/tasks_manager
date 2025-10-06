@@ -1,11 +1,16 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse_lazy
 from django.contrib import messages
-from django.contrib.auth import login as auth_login
+from django.contrib.auth import login as auth_login, logout, get_user_model
 from django.contrib.auth.views import LoginView, LogoutView
 from .forms import CustomUserCreationForm, TaskForm
 from .models import Task
 from django.contrib.auth.decorators import login_required
+from django.db import models
+from django.http import HttpResponseForbidden
+from django.db.models import Q
+
+User = get_user_model()
 
 # Create your views here.
 def signup_view(request):
@@ -26,24 +31,40 @@ class MyLoginView(LoginView):
     #redirect_authenticated_user = False  # redirect logged-in users away from login page
 
 
-class MyLogoutView(LogoutView):
-    next_page = reverse_lazy("tasks:login")
-
+def my_logout_view(request):
+    """Logout user via GET and redirect to login page."""
+    logout(request)
+    return redirect(reverse_lazy("tasks:login"))
 
 @login_required
 def dashboard_view(request):
-    # simple dashboard — we'll expand later
-    return render(request, "tasks/dashboard.html", {})
+    user = request.user
 
-# List Tasks
+    if user.is_superuser:
+        tasks = Task.objects.all().order_by('-created_at')
+        users = User.objects.all()
+    else:
+        # Regular users see tasks they own or are assigned to
+        tasks = Task.objects.filter(Q(owner=user) | Q(assigned_to=user)).distinct().order_by('-created_at')
+        users = None  # normal users can't see others
+
+    context = {
+        "tasks": tasks,
+        "users": users,
+    }
+    return render(request, "tasks/dashboard.html", context)
+
+# List all tasks
 @login_required
 def task_list(request):
-    if request.user.role == "admin":
-        tasks = Task.objects.all() # admin sees everything
+    # Admin sees all tasks
+    if request.user.is_superuser:
+        tasks = Task.objects.all().order_by('-created_at')
     else:
-        tasks = Task.objects.filter(owner=request.user) | Task.objects.filter(assigned_to=request.user)
-    return render(request, "tasks/task_list.html", {"tasks": tasks})
+        # Normal users see tasks they own or are assigned to
+        tasks = Task.objects.filter(Q(owner=request.user) | Q(assigned_to=request.user)).distinct().order_by('-created_at')
 
+    return render(request, "tasks/task_list.html", {"tasks": tasks})
 # Create a task
 def task_create(request):
     if request.method == "POST":
@@ -64,8 +85,9 @@ def task_update(request, pk):
     task = get_object_or_404(Task, pk=pk)
 
     # only owner or admin can edit
-    if request.user != task.owner and request.user.role != "admin":
-        return redirect("tasks:task_list")
+    if not (request.user.is_superuser or task.assigned_to == request.user):
+        messages.error(request, "You don’t have permission to edit this task.")
+        return redirect("dashboard")
     
     if request.method == "POST":
         form =TaskForm(request.POST, instance=task)
@@ -82,9 +104,9 @@ def task_delete(request, pk):
     task = get_object_or_404(Task, pk=pk)
 
     # Only owner or admin can delete
-    if request.user != task.owner and request.user.role != "admin":
-        return redirect("tasks:task_list")
-
+    if not (request.user.is_superuser or task.assigned_to == request.user):
+        messages.error(request, "You don’t have permission to delete this task.")
+        return redirect("dashboard")
     if request.method == "POST":
         task.delete()
         return redirect("tasks:task_list")

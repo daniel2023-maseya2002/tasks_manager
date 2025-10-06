@@ -1,20 +1,66 @@
 body {
-    background-color: #f9f9f9;
-    font-family: Arial, sans-serif;
+  font-family: "Segoe UI", sans-serif;
+  background-color: #f8f9fa;
+  margin: 20px;
 }
 
-h1 {
-    color: darkblue;
+h2.dashboard-title {
+  color: #333;
+  margin-bottom: 10px;
+}
+
+.styled-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 20px 0;
+  font-size: 14px;
+  background: white;
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 0 8px rgba(0,0,0,0.1);
+}
+
+.styled-table th, .styled-table td {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+}
+
+.styled-table th {
+  background-color: #007bff;
+  color: white;
 }
 
 .btn {
-    background-color: #007bff;
-    color: white;
-    padding: 8px 12px;
-    border-radius: 5px;
-    text-decoration: none;
+  display: inline-block;
+  padding: 8px 12px;
+  margin: 4px;
+  border-radius: 4px;
+  text-decoration: none;
+  color: white;
+  background: #007bff;
 }
 
 .btn:hover {
-    background-color: #0056b3;
+  background: #0056b3;
 }
+
+.create-btn { background: #28a745; }
+.create-btn:hover { background: #218838; }
+
+.delete-btn { background: #dc3545; }
+.delete-btn:hover { background: #b52b39; }
+
+.secondary-btn { background: #6c757d; }
+.secondary-btn:hover { background: #545b62; }
+
+.status {
+  padding: 4px 8px;
+  border-radius: 3px;
+  font-weight: bold;
+  color: white;
+}
+
+.status.completed { background: #28a745; }
+.status.pending { background: #ffc107; color: #333; }
+.status.in-progress { background: #17a2b8; }

@@ -1,16 +1,50 @@
 {% extends "tasks/base.html" %}
+{% block title %}All Tasks{% endblock %}
 
 {% block content %}
-<h2>My Tasks</h2>
-<a href="{% url 'tasks:task_create' %}">+ Add Task</a>
-<ul>
-  {% for task in tasks %}
-    <li>
-      <strong>{{ task.title }}</strong> - due {{ task.due_date }} 
-      {% if task.is_completed %} ✅ {% else %} ❌ {% endif %}
-      <a href="{% url 'tasks:task_update' task.id %}">Edit</a>
-      <a href="{% url 'tasks:task_delete' task.id %}">Delete</a>
-    </li>
-  {% endfor %}
-</ul>
+<h2>All Tasks</h2>
+
+<table class="styled-table">
+    <thead>
+        <tr>
+            <th>Title</th>
+            <th>Description</th>
+            <th>Due Date</th>
+            <th>Status</th>
+            <th>Owner</th>
+            <th>Assigned To</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for task in tasks %}
+        <tr>
+            <td>{{ task.title }}</td>
+            <td>{{ task.description|truncatewords:10 }}</td>
+            <td>{{ task.due_date }}</td>
+            <td>
+                {% if task.is_completed %}
+                    ✅ Completed
+                {% else %}
+                    ⏳ Pending
+                {% endif %}
+            </td>
+            <td>{{ task.owner.username }}</td>
+            <td>{{ task.assigned_to.username|default:"—" }}</td>
+            <td>
+                <a href="{% url 'tasks:task_update' task.id %}" class="btn edit-btn">Edit</a> |
+                <a href="{% url 'tasks:task_delete' task.id %}" class="btn delete-btn">Delete</a>
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="7">No tasks found.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<br>
+<a href="{% url 'tasks:task_create' %}" class="btn create-btn">+ Create New Task</a>
+<a href="{% url 'tasks:dashboard' %}" class="btn secondary-btn">Back to Dashboard</a>
 {% endblock %}
