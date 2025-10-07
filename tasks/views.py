@@ -4,11 +4,12 @@ from django.contrib import messages
 from django.contrib.auth import login as auth_login, logout, get_user_model
 from django.contrib.auth.views import LoginView, LogoutView
 from .forms import CustomUserCreationForm, TaskForm
-from .models import Task
-from django.contrib.auth.decorators import login_required
+from .models import Task, CustomUser
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.db import models
 from django.http import HttpResponseForbidden
 from django.db.models import Q
+from django.contrib.auth.forms import UserCreationForm
 
 User = get_user_model()
 
@@ -113,3 +114,62 @@ def task_delete(request, pk):
 
     # FIX: should be "tasks/task_confirm_delete.html"
     return render(request, "tasks/task_confirm_delete.html", {"task": task})
+
+# Utility to check if user is admin
+def is_admin(user):
+    return user.is_authenticated and user.is_superuser
+
+
+# Admin: View All users
+@login_required
+@user_passes_test(is_admin)
+def manage_users(request):
+    users = CustomUser.objects.all()
+    return render(request, "tasks/manage_users.html", {"users": users})
+
+# Admin create a new user
+@login_required
+@user_passes_test(is_admin)
+def create_user(request):
+    if request.method == "POST":
+        form = CustomUserCreationForm(request.POST)
+        if form.is_valid():
+            user = form.save(commit=False)
+            user.role = "user" # default
+            user.save()
+            messages.success(request, "User created successfully!")
+            return redirect("tasks:manage_users")
+        
+    else:
+        form = CustomUserCreationForm()
+    return render(request, "tasks/create_user.html", {"form": form})
+
+# Admin: Edit user
+@login_required
+@user_passes_test(is_admin)
+def edit_user(request, user_id):
+    user = get_object_or_404(CustomUser, id=user_id)
+    if request.method == "POST":
+        form = CustomUserCreationForm(request.POST, instance=user)
+        if form.is_valid():
+            form.save()
+            messages.success(request,"User updated successfully!")
+            return redirect("tasks:manage_users")
+    else:
+        form = CustomUserCreationForm(instance=user)
+    return render(request, "tasks/edit_user.html", {"form": form, "user": user})
+
+# Admin: Delete user
+@login_required
+@user_passes_test(is_admin)
+def delete_user(request, user_id):
+    user = get_object_or_404(request, user_id)
+    user.delete()
+    messages.success(request, "User Deleted Successfully!")
+    return redirect("tasks:manage_users")
+
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser)
+def redirect_admin_users(request):
+    return redirect("tasks:manage_users")

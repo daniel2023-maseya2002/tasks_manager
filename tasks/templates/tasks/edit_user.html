@@ -1,0 +1,21 @@
+{% extends "tasks/base.html" %}
+{% block title %}Edit User{% endblock %}
+
+{% block content %}
+<h2>Edit User: {{ user.username }}</h2>
+
+<form method="POST" class="form-container">
+  {% csrf_token %}
+  {{ form.as_p }}
+
+  <label>Role:</label><br>
+  <select name="role" required>
+    <option value="user" {% if user.role == "user" %}selected{% endif %}>User</option>
+    <option value="admin" {% if user.role == "admin" %}selected{% endif %}>Admin</option>
+  </select><br><br>
+
+  <button type="submit" class="btn btn-success">Update User</button>
+</form>
+
+<p><a href="{% url 'tasks:manage_users' %}" class="btn btn-secondary">Back to Users</a></p>
+{% endblock %}

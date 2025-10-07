@@ -16,8 +16,11 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from tasks.views import MyLoginView
 
 urlpatterns = [
+    path("admin/users/", include("tasks.urls")),  # optional alias
     path("admin/", admin.site.urls),
-    path("", include("tasks.urls")),  # no namespace needed
+    path("accounts/login/", MyLoginView.as_view(), name="login_redirect"),  # 👈 Fix for redirects
+    path("", include("tasks.urls")),
 ]

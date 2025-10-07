@@ -64,3 +64,65 @@ h2.dashboard-title {
 .status.completed { background: #28a745; }
 .status.pending { background: #ffc107; color: #333; }
 .status.in-progress { background: #17a2b8; }
+.page-title {
+  font-size: 1.8rem;
+  margin-bottom: 15px;
+}
+
+.actions-bar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.styled-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+  font-size: 0.95rem;
+}
+
+.styled-table th, .styled-table td {
+  border: 1px solid #ddd;
+  padding: 8px;
+}
+
+.styled-table th {
+  background-color: #f4f4f4;
+  text-align: left;
+}
+
+.styled-table tr:nth-child(even) {
+  background-color: #fafafa;
+}
+
+.styled-table tr:hover {
+  background-color: #f1f1f1;
+}
+
+.btn {
+  padding: 6px 12px;
+  border-radius: 6px;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.create-btn {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.edit-btn {
+  background-color: #2196F3;
+  color: white;
+}
+
+.delete-btn {
+  background-color: #f44336;
+  color: white;
+}
+
+.secondary-btn {
+  background-color: #777;
+  color: white;
+}
