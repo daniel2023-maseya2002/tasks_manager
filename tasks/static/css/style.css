@@ -126,3 +126,30 @@ h2.dashboard-title {
   background-color: #777;
   color: white;
 }
+
+.table-hover tbody tr:hover {
+    background-color: #f8f9fa;
+    transition: background-color 0.2s;
+}
+
+.badge {
+    font-weight: 500;
+    padding: 0.4em 0.8em;
+    font-size: 0.9rem;
+    border-radius: 0.35rem;
+}
+
+.btn-outline-primary:hover {
+    background-color: #0d6efd;
+    color: white;
+}
+
+.btn-outline-danger:hover {
+    background-color: #dc3545;
+    color: white;
+}
+
+.btn-outline-success:hover {
+    background-color: #198754;
+    color: white;
+}

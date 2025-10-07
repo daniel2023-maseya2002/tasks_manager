@@ -19,8 +19,12 @@ from django.urls import path, include
 from tasks.views import MyLoginView
 
 urlpatterns = [
-    path("admin/users/", include("tasks.urls")),  # optional alias
+    # ✅ All your app URLs
+    path("", include(("tasks.urls", "tasks"), namespace="tasks")),
+
+    # ✅ Django admin (separate)
     path("admin/", admin.site.urls),
-    path("accounts/login/", MyLoginView.as_view(), name="login_redirect"),  # 👈 Fix for redirects
-    path("", include("tasks.urls")),
+
+    # ✅ Django's default login redirect
+    path("accounts/login/", MyLoginView.as_view(), name="login_redirect"),
 ]

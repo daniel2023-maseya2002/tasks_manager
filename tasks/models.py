@@ -12,35 +12,46 @@ class CustomUser(AbstractUser):
 
     def __str__(self):
         return f"{self.username} ({self.role})"
-    
-CustomUser = get_user_model()
+
 
 class Task(models.Model):
+    STATUS_CHOICES = (
+        ("Pending", "Pending"),
+        ("In Progress", "In Progress"),
+        ("Completed", "Completed"),
+    )
+
     title = models.CharField(max_length=255)
     description = models.TextField(null=True, blank=True)
     due_date = models.DateField(null=True, blank=True)
+
+    # New status fields
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="Pending")
     is_completed = models.BooleanField(default=False)
 
-    #Relation
-
+    # Relations
     owner = models.ForeignKey(
         CustomUser,
         related_name="owned_tasks",
         on_delete=models.SET_NULL,
         null=True,
         blank=True
-    ) # user who created it
-
+    )
     assigned_to = models.ForeignKey(
         CustomUser,
         related_name="assigned_tasks",
         on_delete=models.SET_NULL,
         null=True,
         blank=True
-    ) # optional: admin assigns
+    )
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    def save(self, *args, **kwargs):
+        # Keep is_completed in sync with status
+        self.is_completed = (self.status == "Completed")
+        super().save(*args, **kwargs)
+
     def __str__(self):
-        return f"{self.title} (Owner: {self.owner.username})"
+        return f"{self.title} (Owner: {self.owner.username if self.owner else 'No Owner'})"

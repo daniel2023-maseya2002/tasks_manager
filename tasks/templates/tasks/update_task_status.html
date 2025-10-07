@@ -1,0 +1,36 @@
+{% extends "tasks/base.html" %}
+{% block title %}Update Task Status{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="card shadow-sm border-0">
+    <div class="card-header bg-primary text-white">
+      <h4 class="mb-0">Update Task Status</h4>
+    </div>
+    <div class="card-body">
+      <form method="post">
+        {% csrf_token %}
+
+        <div class="mb-3">
+          <label class="form-label fw-bold">Task:</label>
+          <p class="form-control-plaintext">{{ task.title }}</p>
+        </div>
+
+        <div class="mb-3">
+          <label for="status" class="form-label fw-bold">Select new status:</label>
+          <select name="status" id="status" class="form-select" required>
+            <option value="Pending" {% if task.status == "Pending" %}selected{% endif %}>Pending</option>
+            <option value="In Progress" {% if task.status == "In Progress" %}selected{% endif %}>In Progress</option>
+            <option value="Completed" {% if task.status == "Completed" %}selected{% endif %}>Completed</option>
+          </select>
+        </div>
+
+        <div class="d-flex justify-content-between mt-4">
+          <button type="submit" class="btn btn-success">✅ Update Status</button>
+          <a href="{% url 'tasks:task_list' %}" class="btn btn-outline-secondary">← Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
