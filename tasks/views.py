@@ -4,7 +4,7 @@ from django.contrib import messages
 from django.contrib.auth import login as auth_login, logout, get_user_model
 from django.contrib.auth.views import LoginView, LogoutView
 from .forms import CustomUserCreationForm, TaskForm
-from .models import Task, CustomUser
+from .models import Task, CustomUser, Notification
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.db import models
 from django.http import HttpResponseForbidden
@@ -47,21 +47,26 @@ def my_logout_view(request):
 def dashboard_view(request):
     user = request.user
 
+    # Tasks: all for superuser, filtered for normal users
     if user.is_superuser:
         tasks = Task.objects.all().order_by('-created_at')
     else:
         tasks = Task.objects.filter(Q(owner=user) | Q(assigned_to=user)).distinct().order_by('-created_at')
 
-    # ✅ Task counts for summary cards
+    # Task counts for summary cards
     pending_count = tasks.filter(status="Pending").count()
     in_progress_count = tasks.filter(status="In Progress").count()
     completed_count = tasks.filter(status="Completed").count()
+
+    # Latest 5 notifications for this user
+    notifications = Notification.objects.filter(recipient=user).order_by('-created_at')[:5]
 
     context = {
         "tasks": tasks,
         "pending_count": pending_count,
         "in_progress_count": in_progress_count,
         "completed_count": completed_count,
+        "notifications": notifications,
     }
     return render(request, "tasks/dashboard.html", context)
 
