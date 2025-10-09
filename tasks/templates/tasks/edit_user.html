@@ -1,47 +1,63 @@
 {% extends "tasks/base.html" %}
+{% load widget_tweaks %}
 {% block title %}Edit User{% endblock %}
 
 {% block content %}
 <div class="container py-5">
-    <div class="card shadow-sm p-4 mx-auto" style="max-width: 600px;">
-        <h2 class="fw-bold mb-4 text-center">Edit User: {{ user.username }}</h2>
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-5">
+        <h2 class="fw-bold text-primary">Edit User: <span class="text-dark">{{ user.username }}</span></h2>
+    </div>
 
-        {% if form.errors %}
-        <div class="alert alert-danger">
-            <ul class="mb-0">
-                {% for field in form %}
-                    {% for error in field.errors %}
-                        <li>{{ error }}</li>
-                    {% endfor %}
-                {% endfor %}
-                {% for error in form.non_field_errors %}
-                    <li>{{ error }}</li>
-                {% endfor %}
-            </ul>
+    <!-- Edit Form Card -->
+    <div class="card shadow-sm border-0 mx-auto" style="max-width: 500px;">
+        <div class="card-body p-5">
+            <form method="POST" class="needs-validation" novalidate>
+                {% csrf_token %}
+
+                <!-- First Name -->
+                <div class="mb-3">
+                    <label for="id_first_name" class="form-label">First Name</label>
+                    {{ form.first_name|add_class:"form-control" }}
+                </div>
+
+                <!-- Last Name -->
+                <div class="mb-3">
+                    <label for="id_last_name" class="form-label">Last Name</label>
+                    {{ form.last_name|add_class:"form-control" }}
+                </div>
+
+                <!-- Email -->
+                <div class="mb-3">
+                    <label for="id_email" class="form-label">Email</label>
+                    {{ form.email|add_class:"form-control" }}
+                </div>
+
+                <!-- Role -->
+                <div class="mb-4">
+                    <label class="form-label">Role</label>
+                    <select name="role" class="form-select">
+                        <option value="user" {% if user.role == "user" %}selected{% endif %}>
+                            User
+                        </option>
+                        <option value="admin" {% if user.role == "admin" %}selected{% endif %}>
+                            Admin
+                        </option>
+                    </select>
+                </div>
+
+                <!-- Submit -->
+                <button type="submit" class="btn btn-primary w-100 fw-bold">Update User</button>
+            </form>
         </div>
-        {% endif %}
+    </div>
 
-        <form method="POST">
-            {% csrf_token %}
-            
-            <!-- Form Fields from the form -->
-            {{ form.as_p }}
-
-            <!-- Role Selection -->
-            <div class="mb-3">
-                <label for="role" class="form-label fw-semibold">Role</label>
-                <select name="role" id="role" class="form-select" required>
-                    <option value="user" {% if user.role == "user" %}selected{% endif %}>User</option>
-                    <option value="admin" {% if user.role == "admin" %}selected{% endif %}>Admin</option>
-                </select>
-            </div>
-
-            <!-- Buttons -->
-            <div class="d-flex justify-content-between mt-4">
-                <button type="submit" class="btn btn-success">Update User</button>
-                <a href="{% url 'tasks:manage_users' %}" class="btn btn-secondary">Back to Users</a>
-            </div>
-        </form>
+    <!-- Back Button -->
+    <div class="mt-4 text-center">
+        <a href="{% url 'tasks:manage_users' %}" class="btn btn-outline-secondary">← Back to Users</a>
     </div>
 </div>
+
+<!-- Optional: Add custom class filter -->
+{% load widget_tweaks %}
 {% endblock %}

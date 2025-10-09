@@ -17,6 +17,17 @@ class CustomUserCreationForm(UserCreationForm):
         # ensure email is required
         self.fields["email"].required = True
 
+class CustomUserUpdateForm(forms.ModelForm):
+    class Meta:
+        model = CustomUser
+        fields = ['first_name', 'last_name', 'email', 'role']  # exclude username & password
+
+    # Optional: Add Bootstrap classes
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields.values():
+            field.widget.attrs.update({'class': 'form-control'})
+
 class TaskForm(forms.ModelForm):
     class Meta:
         model = Task

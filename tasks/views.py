@@ -3,7 +3,7 @@ from django.urls import reverse_lazy
 from django.contrib import messages
 from django.contrib.auth import login as auth_login, logout, get_user_model
 from django.contrib.auth.views import LoginView, LogoutView
-from .forms import CustomUserCreationForm, TaskForm, CommentForm
+from .forms import CustomUserCreationForm, TaskForm, CommentForm, CustomUserUpdateForm
 from .models import Task, CustomUser, Notification, Comment
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.db import models
@@ -301,18 +301,15 @@ def create_user(request):
 def edit_user(request, user_id):
     user = get_object_or_404(CustomUser, id=user_id)
     if request.method == "POST":
-        form = CustomUserCreationForm(request.POST, instance=user)
+        form = CustomUserUpdateForm(request.POST, instance=user)
         if form.is_valid():
-            user = form.save(commit=False)
-            # Set role from the POST data
-            user.role = request.POST.get("role", "user")
-            user.save()
+            form.save()
             messages.success(request, "User updated successfully!")
             return redirect("tasks:manage_users")
     else:
-        form = CustomUserCreationForm(instance=user)
-    return render(request, "tasks/edit_user.html", {"form": form, "user": user})
+        form = CustomUserUpdateForm(instance=user)
 
+    return render(request, "tasks/edit_user.html", {"form": form, "user": user})
 
 
 # Admin: Delete user
