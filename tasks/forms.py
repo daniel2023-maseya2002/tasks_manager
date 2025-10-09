@@ -1,7 +1,7 @@
 
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
-from .models import CustomUser, Task
+from .models import CustomUser, Task, Comment
 
 class CustomUserCreationForm(UserCreationForm):
     """Signup form for CustomUser. Keep role internal (users are 'user' by default)."""
@@ -25,3 +25,8 @@ class TaskForm(forms.ModelForm):
             "due_date": forms.DateTimeInput(attrs={"type": "date"}),
             "description": forms.Textarea(attrs={"rows": 3}),
         }
+
+class CommentForm(forms.ModelForm):
+    class Meta:
+        model = Comment
+        fields = ['content']

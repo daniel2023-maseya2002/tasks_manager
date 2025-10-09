@@ -17,6 +17,7 @@ urlpatterns = [
     path("tasks/create/", views.task_create, name="task_create"),
     path("tasks/<int:pk>/update/", views.task_update, name="task_update"),
     path("tasks/<int:pk>/delete/", views.task_delete, name="task_delete"),
+    path('<int:pk>/', views.task_detail, name='task_detail'),
 
     # ✅ User management (custom)
     path("users/manage/", views.manage_users, name="manage_users"),
@@ -27,6 +28,15 @@ urlpatterns = [
     path('user-list/', views.user_list, name='user_list'),
     path("tasks/<int:task_id>/status/", views.update_task_status, name="update_task_status"),
 
+    path('notifications/', views.notification_view, name='notification_view'),
+    path('notifications/<int:notification_id>/read/', views.mark_notification_read, name='mark_notification_read'),
+    path('notifications/mark-all-read/', views.mark_all_notifications_read, name='mark_all_notifications_read'),
+
+    # Calendar
+    path("calendar/", views.calendar_view, name="calendar_view"),
+
+    # Rapport
+     path("reports/", views.reports_view, name="reports"),
 
     # ✅ Django admin
     path("admin/", admin.site.urls),

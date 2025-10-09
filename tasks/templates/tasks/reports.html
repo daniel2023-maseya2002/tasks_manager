@@ -1,0 +1,121 @@
+{% extends "tasks/base.html" %}
+{% block title %}Reports & Analytics{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Page Header -->
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <h2 class="fw-bold"><i class="bi bi-bar-chart-line-fill me-2"></i>Reports & Analytics</h2>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 p-4 text-center">
+                <h6 class="text-muted mb-2">Completed Tasks</h6>
+                <h3 class="text-success fw-bold">{{ completed_tasks }}</h3>
+                <div class="progress mt-3" style="height: 6px;">
+                    <div class="progress-bar bg-success" role="progressbar" 
+                         style="width: {{ completed_percent }}%;"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 p-4 text-center">
+                <h6 class="text-muted mb-2">Pending Tasks</h6>
+                <h3 class="text-danger fw-bold">{{ pending_tasks }}</h3>
+                <div class="progress mt-3" style="height: 6px;">
+                    <div class="progress-bar bg-danger" role="progressbar" 
+                         style="width: {{ pending_percent }}%;"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 p-4 text-center">
+                <h6 class="text-muted mb-2">In Progress Tasks</h6>
+                <h3 class="text-warning fw-bold">{{ in_progress_tasks }}</h3>
+                <div class="progress mt-3" style="height: 6px;">
+                    <div class="progress-bar bg-warning" role="progressbar" 
+                         style="width: {{ in_progress_percent }}%;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Users Table -->
+    <div class="mb-5">
+        <h4 class="fw-semibold mb-3">Top Users with Task Breakdown</h4>
+        <div class="table-responsive shadow-sm rounded">
+            <table class="table table-hover align-middle mb-0 bg-white">
+                <thead class="table-light">
+                    <tr>
+                        <th>Username</th>
+                        <th class="text-success">Completed</th>
+                        <th class="text-warning">In Progress</th>
+                        <th class="text-danger">Pending</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in top_users %}
+                    <tr>
+                        <td>{{ user.username }}</td>
+                        <td>{{ user.completed_count }}</td>
+                        <td>{{ user.in_progress_count }}</td>
+                        <td>{{ user.pending_count }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" class="text-center">No data available</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Tasks Overview Chart -->
+    <div class="mb-5">
+        <h4 class="fw-semibold mb-3">Tasks Overview Chart</h4>
+        <div class="card shadow-sm border-0 p-4">
+            <canvas id="taskChart" class="w-100" style="height: 300px;"></canvas>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+const ctx = document.getElementById('taskChart');
+new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+        labels: ['Completed', 'Pending', 'In Progress'],
+        datasets: [{
+            data: [{{ completed_tasks }}, {{ pending_tasks }}, {{ in_progress_tasks }}],
+            backgroundColor: ['#198754', '#dc3545', '#ffc107'],
+            borderColor: '#fff',
+            borderWidth: 2
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                position: 'bottom',
+                labels: { padding: 15, font: { size: 14 } }
+            },
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                        const percent = ((context.raw / total) * 100).toFixed(1);
+                        return `${context.label}: ${context.raw} (${percent}%)`;
+                    }
+                }
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

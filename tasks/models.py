@@ -1,6 +1,9 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.contrib.auth import get_user_model
+from django.utils import timezone
+from datetime import timedelta
+from django.contrib.postgres.fields import ArrayField
 
 # Create your models here.
 class CustomUser(AbstractUser):
@@ -29,6 +32,14 @@ class Task(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="Pending")
     is_completed = models.BooleanField(default=False)
 
+    reminder_sent = models.BooleanField(default=False)
+    reminder_sent_offsets = ArrayField(
+        models.IntegerField(),
+        default=list,
+        blank=True,
+        help_text="List of days before due date for which reminders have already been sent"
+    )
+
     # Relations
     owner = models.ForeignKey(
         CustomUser,
@@ -55,6 +66,12 @@ class Task(models.Model):
 
     def __str__(self):
         return f"{self.title} (Owner: {self.owner.username if self.owner else 'No Owner'})"
+    
+    def is_due_soon(self):
+        """Returns True if task is due within 1 day"""
+        if self.due_date:
+            return timezone.now().date() + timedelta(days=1) >= self.due_date
+        return False
 
 class Notification(models.Model):
     recipient = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="notifications")
@@ -65,3 +82,12 @@ class Notification(models.Model):
 
     def __str__(self):
         return f"To {self.recipient.username}: {self.message}"
+
+class Comment(models.Model):
+        task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name='comments')
+        author = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+        content = models.TextField()
+        created_at = models.DateTimeField(auto_now_add=True)
+
+        def __str__(self):
+            return f"Comment by {self.author.username} on {self.task.title}"

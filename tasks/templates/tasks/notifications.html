@@ -1,0 +1,68 @@
+{% extends "tasks/base.html" %}
+{% block title %}Notifications - TaskManager{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold text-primary"><i class="bi bi-bell-fill me-2"></i>Notifications</h2>
+    {% if notifications %}
+      <a href="{% url 'tasks:mark_all_notifications_read' %}" class="btn btn-outline-success btn-sm">
+        <i class="bi bi-check2-all"></i> Mark All as Read
+      </a>
+    {% endif %}
+  </div>
+
+  {% if notifications %}
+    <div class="card shadow-sm">
+      <div class="card-body p-0">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Message</th>
+              <th>Task</th>
+              <th>Date</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for notification in notifications %}
+              <tr {% if not notification.is_read %}class="table-warning"{% endif %}>
+                <td>{{ notification.message }}</td>
+                <td>{{ notification.task.title|default:"—" }}</td>
+                <td>{{ notification.created_at|date:"M d, Y H:i" }}</td>
+                <td>
+                  {% if notification.is_read %}
+                    <span class="badge bg-success">Read</span>
+                  {% else %}
+                    <span class="badge bg-warning text-dark">Unread</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if not notification.is_read %}
+                    <a href="{% url 'tasks:mark_notification_read' notification.id %}" class="btn btn-sm btn-outline-primary">
+                      <i class="bi bi-envelope-open"></i> Mark as Read
+                    </a>
+                  {% else %}
+                    <span class="text-muted">—</span>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  {% else %}
+    <div class="alert alert-info text-center">
+      <i class="bi bi-info-circle"></i> No notifications yet.
+    </div>
+  {% endif %}
+
+  <div class="text-end mt-4">
+    <a href="{% url 'tasks:dashboard' %}" class="btn btn-outline-secondary">
+      <i class="bi bi-arrow-left"></i> Back to Dashboard
+    </a>
+  </div>
+</div>
+{% endblock %}

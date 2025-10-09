@@ -1,0 +1,48 @@
+{% extends "tasks/base.html" %}
+
+{% block title %}Task Details{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <h2 class="fw-bold text-primary mb-3">{{ task.title }}</h2>
+
+  <div class="card mb-4 shadow-sm">
+    <div class="card-body">
+      <p><strong>Description:</strong> {{ task.description|default:"No description provided." }}</p>
+      <p><strong>Due Date:</strong> {{ task.due_date|date:"M d, Y" }}</p>
+      <p><strong>Status:</strong> <span class="badge bg-info text-dark">{{ task.get_status_display }}</span></p>
+      <p><strong>Owner:</strong> {{ task.owner.username }}</p>
+      <p><strong>Assigned To:</strong> {{ task.assigned_to.username|default:"Unassigned" }}</p>
+    </div>
+  </div>
+
+  <h4 class="mb-3">Comments</h4>
+  {% if comments %}
+    {% for comment in comments %}
+      <div class="card mb-3 border-light shadow-sm">
+        <div class="card-body">
+          <p class="mb-1"><strong>{{ comment.author.username }}</strong> said:</p>
+          <p>{{ comment.content }}</p>
+          <small class="text-muted">{{ comment.created_at|date:"M d, Y H:i" }}</small>
+        </div>
+      </div>
+    {% endfor %}
+  {% else %}
+    <div class="alert alert-info">No comments yet.</div>
+  {% endif %}
+
+  {% if user.is_authenticated %}
+    <hr>
+    <h5 class="mb-3">Add a Comment</h5>
+    <form method="POST" class="mb-4">
+      {% csrf_token %}
+      {{ form.as_p }}
+      <button type="submit" class="btn btn-primary">Post Comment</button>
+    </form>
+  {% endif %}
+
+  <a href="{% url 'tasks:task_list' %}" class="btn btn-outline-secondary">
+    <i class="bi bi-arrow-left"></i> Back to All Tasks
+  </a>
+</div>
+{% endblock %}

@@ -3,15 +3,20 @@ from django.urls import reverse_lazy
 from django.contrib import messages
 from django.contrib.auth import login as auth_login, logout, get_user_model
 from django.contrib.auth.views import LoginView, LogoutView
-from .forms import CustomUserCreationForm, TaskForm
-from .models import Task, CustomUser, Notification
+from .forms import CustomUserCreationForm, TaskForm, CommentForm
+from .models import Task, CustomUser, Notification, Comment
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.db import models
 from django.http import HttpResponseForbidden
-from django.db.models import Q
+from django.db.models import Q, Count
 from django.contrib.auth.forms import UserCreationForm
 from django.core.exceptions import PermissionDenied
 from django.contrib.auth.models import User
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from django.utils import timezone
+from datetime import date, timedelta
+from .utils.email_templates import send_task_notification
 
 
 User = get_user_model()
@@ -46,19 +51,27 @@ def my_logout_view(request):
 @login_required
 def dashboard_view(request):
     user = request.user
+    today = timezone.now().date()
+    tomorrow = today + timedelta(days=1)
 
-    # Tasks: all for superuser, filtered for normal users
+    # 🧭 Tasks: all for superuser, filtered for normal users
     if user.is_superuser:
         tasks = Task.objects.all().order_by('-created_at')
     else:
         tasks = Task.objects.filter(Q(owner=user) | Q(assigned_to=user)).distinct().order_by('-created_at')
 
-    # Task counts for summary cards
+    # 📊 Task summary counts
     pending_count = tasks.filter(status="Pending").count()
     in_progress_count = tasks.filter(status="In Progress").count()
     completed_count = tasks.filter(status="Completed").count()
 
-    # Latest 5 notifications for this user
+    # ⏰ Upcoming tasks (due today or tomorrow, not completed)
+    upcoming_tasks = tasks.filter(
+        due_date__lte=tomorrow,
+        is_completed=False
+    )
+
+    # 🔔 Latest 5 notifications for this user
     notifications = Notification.objects.filter(recipient=user).order_by('-created_at')[:5]
 
     context = {
@@ -66,10 +79,11 @@ def dashboard_view(request):
         "pending_count": pending_count,
         "in_progress_count": in_progress_count,
         "completed_count": completed_count,
+        "upcoming_tasks": upcoming_tasks,
         "notifications": notifications,
     }
-    return render(request, "tasks/dashboard.html", context)
 
+    return render(request, "tasks/dashboard.html", context)
 
 @login_required
 def task_list(request):
@@ -131,43 +145,80 @@ def task_create(request):
 def task_update(request, pk):
     task = get_object_or_404(Task, pk=pk)
 
-    # only owner or admin can edit
+    # ✅ Permission check: only owner, assigned user, or admin can edit
     if not (request.user.is_superuser or task.assigned_to == request.user):
         messages.error(request, "You don’t have permission to edit this task.")
         return redirect("dashboard")
-    
+
     if request.method == "POST":
-        form =TaskForm(request.POST, instance=task)
+        form = TaskForm(request.POST, instance=task)
         if form.is_valid():
-            form.save()
+            task = form.save()  # Save changes
+
+            # ✅ Send email notification after update
+            try:
+                # Notify owner
+                if task.owner and task.owner.email:
+                    send_task_notification(task.owner, task, action="update")
+
+                # Notify assigned user (if different from owner)
+                if task.assigned_to and task.assigned_to != task.owner:
+                    send_task_notification(task.assigned_to, task, action="update")
+            except Exception as e:
+                print("Email notification failed:", e)
+
+            messages.success(request, "Task updated successfully!")
             return redirect("tasks:task_list")
     else:
         form = TaskForm(instance=task)
+
     return render(request, "tasks/task_form.html", {"form": form})
 
 @login_required
 def update_task_status(request, task_id):
     task = get_object_or_404(Task, id=task_id)
 
-    # Check Permission
+    # ✅ Permission check
     if not (request.user.is_superuser or request.user == task.owner or request.user == task.assigned_to):
-        messages.error(request, "You do not have permission to change tasks")
+        messages.error(request, "You do not have permission to change this task.")
         return redirect('tasks:task_list')
-    
 
     if request.method == "POST":
         new_status = request.POST.get("status")
-        valid_statues =  ["Pending", "In Progress", "Completed"]
-        if new_status in valid_statues:
-            task.status = new_status
-            # Sync is_completed with status
-            task.is_completed = (new_status == "Completed")
-            task.save()
-            messages.success(request, f"Task '{task.title}' status updated to {new_status}.")
+        valid_statuses = ["Pending", "In Progress", "Completed"]
+
+        if new_status in valid_statuses:
+            old_status = task.status
+            if new_status != old_status:
+                task.status = new_status
+                task.is_completed = (new_status == "Completed")
+                task.save()
+
+                messages.success(request, f"Task '{task.title}' status updated to {new_status}.")
+
+                # ✅ Create notification for assigned user (if not the updater)
+                if task.assigned_to and task.assigned_to != request.user:
+                    Notification.objects.create(
+                        recipient=task.assigned_to,
+                        task=task,
+                        message=f"The status of your assigned task '{task.title}' changed from '{old_status}' to '{new_status}'."
+                    )
+
+                # ✅ Optional: notify task owner if someone else changed the status
+                if task.owner and task.owner != request.user:
+                    Notification.objects.create(
+                        recipient=task.owner,
+                        task=task,
+                        message=f"The task '{task.title}' you created was updated to '{new_status}' by {request.user.username}."
+                    )
+
+            else:
+                messages.info(request, "No status change detected.")
         else:
-            messages.error(request, "Invalid status selected")
+            messages.error(request, "Invalid status selected.")
+
         return redirect('tasks:task_list')
-    
+
     return render(request, "tasks/update_task_status.html", {"task": task})
 
 
@@ -302,5 +353,157 @@ def user_list(request):
     return render(request, "user_list.html", {'users': users})
 
 
+@login_required
+def mark_notification_read(request, notification_id):
+    notification = get_object_or_404(Notification, id=notification_id, recipient=request.user)
+    notification.is_read = True
+    notification.save()
+    return redirect('tasks:notification_view')  # back to notification page
+
+@login_required
+def notification_view(request):
+    notifications = Notification.objects.filter(recipient=request.user).order_by('-created_at')
+    return render(request, "tasks/notifications.html", {"notifications": notifications})
+
+@login_required
+def mark_all_notifications_read(request):
+    """Mark all user notifications as read"""
+    Notification.objects.filter(recipient=request.user, is_read=False).update(is_read=True)
+    return redirect('notifications_view')
+
+@login_required
+def task_detail(request, pk):
+    task = get_object_or_404(Task, pk=pk)
+    comments = task.comments.all().order_by('-created_at')
+
+    if request.method == "POST":
+        form = CommentForm(request.POST)
+        if form.is_valid():
+            comment = form.save(commit=False)
+            comment.task = task
+            comment.author = request.user
+            comment.save()
+            return redirect('tasks:task_detail', pk=pk)
+    
+    else:
+        form = CommentForm()
+
+    return render(request, 'tasks/task_detail.html',{
+        'task': task,
+        'comments': comments,
+        'form': form
+    })
+@receiver(post_save, sender=Comment)
+def create_comment_notification(sender, instance, created, **kwargs):
+    if created:
+        task = instance.task
+        commenter = instance.author
+        owner = task.owner
+
+        #Notify the task owner only the commenter isn't the owner
+        if owner != commenter:
+            Notification.objects.create(
+                recipient=owner,
+                message=f"{commenter.username} commented on '{task.title}': {instance.content[:50]}...",
+                task=task
+            )
+
+@login_required
+def calendar_view(request):
+    today = date.today()
+    start_of_week = today - timedelta(days=today.weekday())  # Monday
+    end_of_week = start_of_week + timedelta(days=6)          # Sunday
+
+    # ✅ Fetch tasks due between Monday and Sunday
+    tasks = (
+        Task.objects.filter(
+            due_date__range=[start_of_week, end_of_week],
+            owner=request.user
+        ) |
+        Task.objects.filter(
+            due_date__range=[start_of_week, end_of_week],
+            assigned_to=request.user
+        )
+    )
+
+    # ✅ Group tasks by day
+    tasks_by_date = {}
+    for day in range(7):
+        current_date = start_of_week + timedelta(days=day)
+        tasks_by_date[current_date] = tasks.filter(due_date=current_date)
+
+    context = {
+        "tasks_by_date": tasks_by_date,
+        "start_of_week": start_of_week,
+        "end_of_week": end_of_week,
+    }
+    return render(request, "tasks/calendar.html", context)
 
 
+@login_required
+def calendar_view(request):
+    user = request.user
+
+    # Get week offset from query params (default=0)
+    try:
+        week_offset = int(request.GET.get('week_offset', 0))
+    except ValueError:
+        week_offset = 0
+
+    today = timezone.now().date()
+    # Adjust today based on week_offset
+    start_of_week = today - timedelta(days=today.weekday()) + timedelta(weeks=week_offset)
+    end_of_week = start_of_week + timedelta(days=6)
+
+    # Fetch tasks for the user within the week
+    tasks = Task.objects.filter(
+        Q(owner=user) | Q(assigned_to=user),
+        due_date__range=[start_of_week, end_of_week]
+    )
+
+    # Group tasks by date
+    tasks_by_date = {}
+    for i in range(7):
+        day = start_of_week + timedelta(days=i)
+        tasks_by_date[day] = tasks.filter(due_date=day)
+
+    context = {
+        "tasks_by_date": tasks_by_date,
+        "start_of_week": start_of_week,
+        "end_of_week": end_of_week,
+        "week_offset": week_offset,  # pass offset for navigation
+    }
+    return render(request, "tasks/calendar.html", context)
+
+@user_passes_test(is_admin)
+def reports_view(request):
+    # 1️⃣ Overall task counts
+    total_tasks = Task.objects.count()
+    completed_tasks = Task.objects.filter(is_completed=True).count()
+    pending_tasks = Task.objects.filter(status="pending").count()
+    in_progress_tasks = Task.objects.filter(status="progress").count()
+
+    # 2️⃣ Percentages for progress bars
+    completed_percent = round((completed_tasks / total_tasks * 100) if total_tasks else 0, 1)
+    pending_percent = round((pending_tasks / total_tasks * 100) if total_tasks else 0, 1)
+    in_progress_percent = round((in_progress_tasks / total_tasks * 100) if total_tasks else 0, 1)
+
+    # 3️⃣ Top users with task breakdown
+    top_users = CustomUser.objects.filter(role="user").annotate(
+        completed_count=Count('owned_tasks', filter=Q(owned_tasks__is_completed=True)),
+        in_progress_count=Count('owned_tasks', filter=Q(owned_tasks__status="progress")),
+        pending_count=Count('owned_tasks', filter=Q(owned_tasks__status="pending"))
+    ).order_by('-completed_count')[:5]
+
+    context = {
+        "total_tasks": total_tasks,
+        "completed_tasks": completed_tasks,
+        "pending_tasks": pending_tasks,
+        "in_progress_tasks": in_progress_tasks,
+        "completed_percent": completed_percent,
+        "pending_percent": pending_percent,
+        "in_progress_percent": in_progress_percent,
+        "top_users": top_users,
+    }
+
+    return render(request, "tasks/reports.html", context)

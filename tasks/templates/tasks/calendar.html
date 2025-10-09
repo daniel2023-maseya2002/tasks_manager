@@ -1,0 +1,116 @@
+{% extends "tasks/base.html" %}
+{% block title %}Task Calendar{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+
+  <!-- 🗓️ Header with navigation -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <a href="?week_offset={{ week_offset|add:"-1" }}" class="btn btn-outline-primary">⬅ Previous Week</a>
+    
+    <div class="text-center flex-grow-1">
+      <h2 class="fw-bold mb-1">📅 Weekly Task Calendar</h2>
+      <p class="text-muted mb-0">
+        <strong>{{ start_of_week|date:"M d, Y" }}</strong> → <strong>{{ end_of_week|date:"M d, Y" }}</strong>
+      </p>
+    </div>
+
+    <div class="d-flex gap-2">
+      <a href="?week_offset=0" class="btn btn-outline-success">Today</a>
+      <a href="?week_offset={{ week_offset|add:"1" }}" class="btn btn-outline-primary">Next Week ➡</a>
+      <a href="{% url 'tasks:dashboard' %}" class="btn btn-outline-secondary ms-2">⬅ Back</a>
+    </div>
+  </div>
+
+  <!-- 🧩 Calendar Grid -->
+  <div class="calendar-grid">
+    {% for date, day_tasks in tasks_by_date.items %}
+      <div class="calendar-item shadow-sm {% if date == today %}border border-3 border-primary{% endif %}">
+        <div class="calendar-header">
+          <strong>{{ date|date:"D" }}</strong><br>
+          <small>{{ date|date:"M d" }}</small>
+        </div>
+        <div class="calendar-body">
+          {% if day_tasks %}
+            <ul class="list-unstyled mb-0">
+              {% for task in day_tasks %}
+                <li class="mb-2">
+                  <strong>{{ task.title }}</strong><br>
+                  {% if task.is_completed %}
+                    <span class="badge bg-success">Completed</span>
+                  {% else %}
+                    <span class="badge bg-warning text-dark">Pending</span>
+                  {% endif %}
+                </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p class="text-muted text-center mb-0">No tasks</p>
+          {% endif %}
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+
+<style>
+/* Layout grid */
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 15px;
+  justify-content: center;
+}
+
+/* Each day card */
+.calendar-item {
+  border: 1px solid #dee2e6;
+  border-radius: 15px;
+  background: #ffffff;
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.calendar-item:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* Highlight today */
+.calendar-item.border-primary {
+  box-shadow: 0 0 10px 2px rgba(13, 110, 253, 0.5);
+}
+
+/* Header styling */
+.calendar-header {
+  background: linear-gradient(135deg, #0d6efd, #0dcaf0);
+  color: white;
+  text-align: center;
+  padding: 8px;
+  border-radius: 15px 15px 0 0;
+}
+
+/* Scrollable body if too many tasks */
+.calendar-body {
+  padding: 10px;
+  max-height: 160px;
+  overflow-y: auto;
+}
+
+/* Hide scrollbar unless hovering */
+.calendar-body::-webkit-scrollbar {
+  width: 6px;
+  background: transparent;
+}
+.calendar-body:hover::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 4px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .calendar-grid {
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  }
+}
+</style>
+{% endblock %}
