@@ -17,6 +17,8 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from tasks.views import MyLoginView
+from django.conf import settings
+from django.conf.urls.static import static
 
 urlpatterns = [
     # ✅ All your app URLs
@@ -28,3 +30,6 @@ urlpatterns = [
     # ✅ Django's default login redirect
     path("accounts/login/", MyLoginView.as_view(), name="login_redirect"),
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

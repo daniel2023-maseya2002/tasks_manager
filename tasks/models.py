@@ -59,6 +59,8 @@ class Task(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    # New field for attachments
+    attachment = models.FileField(upload_to='task_attachements/', null=True, blank=True)
     def save(self, *args, **kwargs):
         # Keep is_completed in sync with status
         self.is_completed = (self.status == "Completed")

@@ -1,9 +1,12 @@
 {% extends "tasks/base.html" %}
 {% load static %}
 
+{% block title %}{% if form.instance.pk %}Edit Task{% else %}Create Task{% endif %}{% endblock %}
+
 {% block content %}
 <div class="container mt-5">
   <div class="card shadow-lg border-0 rounded-4">
+    <!-- Header -->
     <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center rounded-top-4">
       <h4 class="mb-0">
         <i class="fas fa-tasks me-2"></i>
@@ -14,8 +17,9 @@
       </a>
     </div>
 
+    <!-- Body -->
     <div class="card-body p-4">
-      <form method="post" class="needs-validation" novalidate>
+      <form method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
         {% csrf_token %}
         
         <div class="row g-3">
@@ -24,14 +28,18 @@
             <div class="form-group">
               <label class="form-label fw-semibold">{{ field.label }}</label>
               {{ field }}
+              {% if field.help_text %}
+                <small class="form-text text-muted">{{ field.help_text }}</small>
+              {% endif %}
               {% if field.errors %}
-              <div class="text-danger small">{{ field.errors|striptags }}</div>
+                <div class="text-danger small mt-1">{{ field.errors|striptags }}</div>
               {% endif %}
             </div>
           </div>
           {% endfor %}
         </div>
 
+        <!-- Action Buttons -->
         <div class="d-flex justify-content-end mt-4">
           <a href="{% url 'tasks:task_list' %}" class="btn btn-outline-secondary me-2">
             <i class="fas fa-times-circle me-1"></i> Cancel
@@ -64,6 +72,10 @@
 
   input, select, textarea {
     border-radius: 10px !important;
+  }
+
+  .form-label {
+    color: #495057;
   }
 </style>
 {% endblock %}

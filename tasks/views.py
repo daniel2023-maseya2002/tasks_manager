@@ -139,18 +139,29 @@ def task_list(request):
 
 
 # Create a task
+@login_required
 def task_create(request):
-    if request.method == "POST":
-        form = TaskForm(request.POST)
+    """Create a new task."""
+    if request.method == 'POST':
+        form = TaskForm(request.POST, request.FILES)
         if form.is_valid():
             task = form.save(commit=False)
-            task.owner = request.user # logged user is the creator
+            task.owner = request.user
             task.save()
-            return redirect("tasks:task_list")
-    
+
+            # ✅ Optional: send notifications to assigned user (if any)
+            try:
+                if task.assigned_to and task.assigned_to != request.user:
+                    send_task_notification(task.assigned_to, task, action="create")
+            except Exception as e:
+                print("Email notification failed:", e)
+
+            messages.success(request, "Task created successfully!")
+            return redirect('tasks:task_list')
     else:
         form = TaskForm()
-    return render(request, "tasks/task_form.html", {"form": form})
+
+    return render(request, 'tasks/task_form.html', {'form': form})
 
 
 #update a task

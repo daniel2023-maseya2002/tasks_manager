@@ -31,7 +31,7 @@ class CustomUserUpdateForm(forms.ModelForm):
 class TaskForm(forms.ModelForm):
     class Meta:
         model = Task
-        fields = ["title", "description", "due_date", "assigned_to", "is_completed"]
+        fields = ["title", "description", "due_date", "assigned_to", "is_completed", "attachment"]
         widgets = {
             "due_date": forms.DateTimeInput(attrs={"type": "date"}),
             "description": forms.Textarea(attrs={"rows": 3}),
