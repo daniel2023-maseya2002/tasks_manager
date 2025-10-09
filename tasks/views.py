@@ -4,7 +4,7 @@ from django.contrib import messages
 from django.contrib.auth import login as auth_login, logout, get_user_model
 from django.contrib.auth.views import LoginView, LogoutView
 from .forms import CustomUserCreationForm, TaskForm, CommentForm, CustomUserUpdateForm
-from .models import Task, CustomUser, Notification, Comment
+from .models import Task, CustomUser, Notification, Comment, UserActivity
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.db import models
 from django.http import HttpResponseForbidden
@@ -37,8 +37,21 @@ def signup_view(request):
 
 class MyLoginView(LoginView):
     template_name = "tasks/login.html"
-    #redirect_authenticated_user = False  # redirect logged-in users away from login page
 
+    def form_valid(self, form):
+        """When login succeeds, record user activity."""
+        user = form.get_user()
+        response = super().form_valid(form)
+
+        # Record login details
+        UserActivity.objects.create(
+            user=user,
+            ip_address=self.request.META.get('REMOTE_ADDR'),
+            user_agent=self.request.META.get('HTTP_USER_AGENT', 'Unknown'),
+            login_time=timezone.now(),
+        )
+
+        return response
 
 
 def my_logout_view(request):
@@ -475,26 +488,43 @@ def calendar_view(request):
     }
     return render(request, "tasks/calendar.html", context)
 
-@user_passes_test(is_admin)
+@user_passes_test(lambda u: u.is_superuser or getattr(u, "role", "") == "admin")
 def reports_view(request):
-    # 1️⃣ Overall task counts
+    # 1️⃣ Task statistics
     total_tasks = Task.objects.count()
-    completed_tasks = Task.objects.filter(is_completed=True).count()
-    pending_tasks = Task.objects.filter(status="pending").count()
-    in_progress_tasks = Task.objects.filter(status="progress").count()
+    completed_tasks = Task.objects.filter(Q(status="completed") | Q(is_completed=True)).count()
+    pending_tasks = Task.objects.filter(Q(status="pending") | Q(is_completed=False)).count()
+    in_progress_tasks = Task.objects.filter(Q(status="in_progress") | Q(status="progress")).count()
 
-    # 2️⃣ Percentages for progress bars
-    completed_percent = round((completed_tasks / total_tasks * 100) if total_tasks else 0, 1)
-    pending_percent = round((pending_tasks / total_tasks * 100) if total_tasks else 0, 1)
-    in_progress_percent = round((in_progress_tasks / total_tasks * 100) if total_tasks else 0, 1)
+    # 2️⃣ Percentages for visual charts
+    def percent(part):
+        return round((part / total_tasks * 100), 1) if total_tasks else 0
 
-    # 3️⃣ Top users with task breakdown
-    top_users = CustomUser.objects.filter(role="user").annotate(
-        completed_count=Count('owned_tasks', filter=Q(owned_tasks__is_completed=True)),
-        in_progress_count=Count('owned_tasks', filter=Q(owned_tasks__status="progress")),
-        pending_count=Count('owned_tasks', filter=Q(owned_tasks__status="pending"))
-    ).order_by('-completed_count')[:5]
+    completed_percent = percent(completed_tasks)
+    pending_percent = percent(pending_tasks)
+    in_progress_percent = percent(in_progress_tasks)
 
+    # 3️⃣ Top 5 users (only regular users)
+    top_users = (
+        CustomUser.objects.filter(role="user")
+        .annotate(
+            completed_count=Count("owned_tasks", filter=Q(owned_tasks__status="completed") | Q(owned_tasks__is_completed=True)),
+            in_progress_count=Count("owned_tasks", filter=Q(owned_tasks__status="in_progress") | Q(owned_tasks__status="progress")),
+            pending_count=Count("owned_tasks", filter=Q(owned_tasks__status="pending")),
+        )
+        .order_by("-completed_count")[:5]
+    )
+
+    # 4️⃣ Recent user logins (last 10)
+    recent_logins = UserActivity.objects.select_related("user").order_by("-login_time")[:10]
+
+    # 5️⃣ Chart.js Data
+    chart_data = {
+        "labels": ["Pending", "In Progress", "Completed"],
+        "data": [pending_tasks, in_progress_tasks, completed_tasks],
+    }
+
+    # 6️⃣ Context for template
     context = {
         "total_tasks": total_tasks,
         "completed_tasks": completed_tasks,
@@ -504,6 +534,8 @@ def reports_view(request):
         "pending_percent": pending_percent,
         "in_progress_percent": in_progress_percent,
         "top_users": top_users,
+        "recent_logins": recent_logins,
+        "chart_data": chart_data,
     }
 
     return render(request, "tasks/reports.html", context)

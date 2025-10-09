@@ -91,3 +91,13 @@ class Comment(models.Model):
 
         def __str__(self):
             return f"Comment by {self.author.username} on {self.task.title}"
+        
+
+class UserActivity(models.Model):
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    login_time = models.DateTimeField(default=timezone.now)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.TextField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.user.username} logged in at {self.login_time}"
