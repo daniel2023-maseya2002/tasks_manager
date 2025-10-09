@@ -296,7 +296,6 @@ def create_user(request):
 
 
 
-# Admin: Edit user
 @login_required
 @user_passes_test(is_admin)
 def edit_user(request, user_id):
@@ -304,12 +303,16 @@ def edit_user(request, user_id):
     if request.method == "POST":
         form = CustomUserCreationForm(request.POST, instance=user)
         if form.is_valid():
-            form.save()
-            messages.success(request,"User updated successfully!")
+            user = form.save(commit=False)
+            # Set role from the POST data
+            user.role = request.POST.get("role", "user")
+            user.save()
+            messages.success(request, "User updated successfully!")
             return redirect("tasks:manage_users")
     else:
         form = CustomUserCreationForm(instance=user)
     return render(request, "tasks/edit_user.html", {"form": form, "user": user})
+
 
 
 # Admin: Delete user

@@ -2,20 +2,46 @@
 {% block title %}Edit User{% endblock %}
 
 {% block content %}
-<h2>Edit User: {{ user.username }}</h2>
+<div class="container py-5">
+    <div class="card shadow-sm p-4 mx-auto" style="max-width: 600px;">
+        <h2 class="fw-bold mb-4 text-center">Edit User: {{ user.username }}</h2>
 
-<form method="POST" class="form-container">
-  {% csrf_token %}
-  {{ form.as_p }}
+        {% if form.errors %}
+        <div class="alert alert-danger">
+            <ul class="mb-0">
+                {% for field in form %}
+                    {% for error in field.errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                {% endfor %}
+                {% for error in form.non_field_errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
 
-  <label>Role:</label><br>
-  <select name="role" required>
-    <option value="user" {% if user.role == "user" %}selected{% endif %}>User</option>
-    <option value="admin" {% if user.role == "admin" %}selected{% endif %}>Admin</option>
-  </select><br><br>
+        <form method="POST">
+            {% csrf_token %}
+            
+            <!-- Form Fields from the form -->
+            {{ form.as_p }}
 
-  <button type="submit" class="btn btn-success">Update User</button>
-</form>
+            <!-- Role Selection -->
+            <div class="mb-3">
+                <label for="role" class="form-label fw-semibold">Role</label>
+                <select name="role" id="role" class="form-select" required>
+                    <option value="user" {% if user.role == "user" %}selected{% endif %}>User</option>
+                    <option value="admin" {% if user.role == "admin" %}selected{% endif %}>Admin</option>
+                </select>
+            </div>
 
-<p><a href="{% url 'tasks:manage_users' %}" class="btn btn-secondary">Back to Users</a></p>
+            <!-- Buttons -->
+            <div class="d-flex justify-content-between mt-4">
+                <button type="submit" class="btn btn-success">Update User</button>
+                <a href="{% url 'tasks:manage_users' %}" class="btn btn-secondary">Back to Users</a>
+            </div>
+        </form>
+    </div>
+</div>
 {% endblock %}
