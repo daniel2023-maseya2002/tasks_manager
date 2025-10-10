@@ -4,7 +4,7 @@ from django.contrib.auth import get_user_model
 from django.utils import timezone
 from datetime import timedelta
 from django.contrib.postgres.fields import ArrayField
-
+from django.conf import settings
 # Create your models here.
 class CustomUser(AbstractUser):
     ROLE_CHOICES = (
@@ -59,6 +59,9 @@ class Task(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    #Collaborations
+    collaborators = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='tasks_collaborating', blank=True)
+
     # New field for attachments
     attachment = models.FileField(upload_to='task_attachements/', null=True, blank=True)
     def save(self, *args, **kwargs):
@@ -103,3 +106,18 @@ class UserActivity(models.Model):
 
     def __str__(self):
         return f"{self.user.username} logged in at {self.login_time}"
+
+class PasswordResetOTP(models.Model):
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    otp_code = models.CharField(max_length=6)
+    created_at = models.DateTimeField(default=timezone.now)
+
+    def is_valid(self):
+        # OTP valid for 10 minutes
+        return timezone.now() - self.created_at < timedelta(minutes=4)
+
+    def __str__(self):
+        return f"{self.user.username} - {self.otp_code}"
+    
+
+    

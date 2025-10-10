@@ -1,10 +1,11 @@
+import random
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse_lazy
 from django.contrib import messages
 from django.contrib.auth import login as auth_login, logout, get_user_model
 from django.contrib.auth.views import LoginView, LogoutView
 from .forms import CustomUserCreationForm, TaskForm, CommentForm, CustomUserUpdateForm
-from .models import Task, CustomUser, Notification, Comment, UserActivity
+from .models import Task, CustomUser, Notification, Comment, UserActivity, PasswordResetOTP
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.db import models
 from django.http import HttpResponseForbidden
@@ -17,6 +18,9 @@ from django.dispatch import receiver
 from django.utils import timezone
 from datetime import date, timedelta
 from .utils.email_templates import send_task_notification
+from django.contrib.auth.hashers import make_password
+from django.core.mail import send_mail
+
 
 
 User = get_user_model()
@@ -141,62 +145,51 @@ def task_list(request):
 # Create a task
 @login_required
 def task_create(request):
-    """Create a new task."""
-    if request.method == 'POST':
-        form = TaskForm(request.POST, request.FILES)
+    if request.method == "POST":
+        form = TaskForm(request.POST, request.FILES, user=request.user)
         if form.is_valid():
             task = form.save(commit=False)
             task.owner = request.user
             task.save()
-
-            # ✅ Optional: send notifications to assigned user (if any)
-            try:
-                if task.assigned_to and task.assigned_to != request.user:
-                    send_task_notification(task.assigned_to, task, action="create")
-            except Exception as e:
-                print("Email notification failed:", e)
-
+            form.save_m2m()
             messages.success(request, "Task created successfully!")
-            return redirect('tasks:task_list')
+            return redirect("tasks:task_list")
     else:
-        form = TaskForm()
+        form = TaskForm(user=request.user)
+    return render(request, "tasks/task_form.html", {"form": form})
 
-    return render(request, 'tasks/task_form.html', {'form': form})
 
 
 #update a task
 @login_required
 def task_update(request, pk):
+    """Update a task — only admin, owner, or assigned user can edit."""
     task = get_object_or_404(Task, pk=pk)
 
-    # ✅ Permission check: only owner, assigned user, or admin can edit
-    if not (request.user.is_superuser or task.assigned_to == request.user):
+    # ✅ Permission check
+    if not (request.user.is_superuser or request.user == task.owner or request.user == task.assigned_to):
         messages.error(request, "You don’t have permission to edit this task.")
         return redirect("dashboard")
 
     if request.method == "POST":
-        form = TaskForm(request.POST, instance=task)
+        form = TaskForm(request.POST, request.FILES, instance=task, user=request.user)
         if form.is_valid():
-            task = form.save()  # Save changes
+            # ✅ Save model instance first (without committing M2M)
+            updated_task = form.save(commit=False)
+            updated_task.owner = task.owner  # Keep existing owner
+            updated_task.save()
 
-            # ✅ Send email notification after update
-            try:
-                # Notify owner
-                if task.owner and task.owner.email:
-                    send_task_notification(task.owner, task, action="update")
-
-                # Notify assigned user (if different from owner)
-                if task.assigned_to and task.assigned_to != task.owner:
-                    send_task_notification(task.assigned_to, task, action="update")
-            except Exception as e:
-                print("Email notification failed:", e)
+            # ✅ Now save collaborators (ManyToManyField)
+            form.save_m2m()
 
             messages.success(request, "Task updated successfully!")
             return redirect("tasks:task_list")
     else:
-        form = TaskForm(instance=task)
+        form = TaskForm(instance=task, user=request.user)
 
-    return render(request, "tasks/task_form.html", {"form": form})
+    return render(request, "tasks/task_form.html", {"form": form, "task": task})
+
+
 
 @login_required
 def update_task_status(request, task_id):
@@ -397,9 +390,23 @@ def mark_all_notifications_read(request):
 
 @login_required
 def task_detail(request, pk):
+    """Display a single task with comments and allow posting new comments."""
+
     task = get_object_or_404(Task, pk=pk)
+
+    # ✅ Permission check: owner, assigned user, collaborator, or admin
+    if not (
+        request.user == task.owner
+        or request.user == task.assigned_to
+        or request.user in task.collaborators.all()
+        or request.user.role == 'admin'
+    ):
+        return HttpResponseForbidden("You do not have permission to view this task.")
+
+    # Fetch comments ordered by newest first
     comments = task.comments.all().order_by('-created_at')
 
+    # Handle new comment submission
     if request.method == "POST":
         form = CommentForm(request.POST)
         if form.is_valid():
@@ -408,15 +415,17 @@ def task_detail(request, pk):
             comment.author = request.user
             comment.save()
             return redirect('tasks:task_detail', pk=pk)
-    
     else:
         form = CommentForm()
 
-    return render(request, 'tasks/task_detail.html',{
+    return render(request, 'tasks/task_detail.html', {
         'task': task,
         'comments': comments,
         'form': form
     })
+
+
+
 @receiver(post_save, sender=Comment)
 def create_comment_notification(sender, instance, created, **kwargs):
     if created:
@@ -550,3 +559,81 @@ def reports_view(request):
     }
 
     return render(request, "tasks/reports.html", context)
+
+def forgot_password_view(request):
+    if request.method == 'POST':
+        email = request.POST.get('email')
+        try:
+            user = User.objects.get(email=email)
+            otp_code = str(random.randint(100000, 999999))
+            PasswordResetOTP.objects.create(user=user, otp_code=otp_code)
+
+            # Send OTP via email
+            send_mail(
+                'Your Password Reset OTP - Task Manager',
+                f'Your OTP for resetting your password is: {otp_code}. It will expire in 4 minutes.',
+                'yourapp@example.com',  # Replace with your real sender email
+                [email],
+                fail_silently=False,
+            )
+
+            request.session['reset_email'] = email
+            messages.success(request, 'OTP sent to your email!')
+            return redirect('tasks:verify_otp')
+
+        except User.DoesNotExist:
+            messages.error(request, 'No user found with that email address.')
+
+    return render(request, 'tasks/forgot_password.html')
+
+def verify_otp_view(request):
+    email = request.session.get('reset_email')
+    if not email:
+        messages.error(request, 'Session expired. Please try again.')
+        return redirect('tasks:forgot_password')
+
+    if request.method == 'POST':
+        otp_input = request.POST.get('otp')
+        try:
+            user = User.objects.get(email=email)
+            otp_record = PasswordResetOTP.objects.filter(user=user).latest('created_at')
+
+            if otp_record.otp_code == otp_input and otp_record.is_valid():
+                request.session['otp_verified'] = True
+                messages.success(request, 'OTP verified successfully!')
+                return redirect('tasks:reset_password')
+            else:
+                messages.error(request, 'Invalid or expired OTP.')
+
+        except (User.DoesNotExist, PasswordResetOTP.DoesNotExist):
+            messages.error(request, 'Invalid request.')
+
+    return render(request, 'tasks/verify_otp.html')
+
+def reset_password_view(request):
+    email = request.session.get('reset_email')
+    otp_verified = request.session.get('otp_verified')
+
+    if not (email and otp_verified):
+        messages.error(request, 'Unauthorized action.')
+        return redirect('tasks:forgot_password')
+
+    if request.method == 'POST':
+        password1 = request.POST.get('password1')
+        password2 = request.POST.get('password2')
+
+        if password1 == password2:
+            user = User.objects.get(email=email)
+            user.password = make_password(password1)
+            user.save()
+
+            # Clean session
+            request.session.pop('reset_email', None)
+            request.session.pop('otp_verified', None)
+
+            messages.success(request, 'Password reset successfully! You can now login.')
+            return redirect('tasks:login')
+        else:
+            messages.error(request, 'Passwords do not match.')
+
+    return render(request, 'tasks/reset_password.html')

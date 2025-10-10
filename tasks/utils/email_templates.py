@@ -22,7 +22,10 @@ def get_site_url():
 
 
 def send_task_notification(user, task, action="update"):
-    # 💼 Subject & intro based on action type
+    """
+    Sends an HTML email notification to a user depending on the action.
+    """
+    # 💬 Subject & message intro depending on action
     if action == "assign":
         subject = f"📋 Misala | New Task Assigned: {task.title}"
         intro = f"You've been assigned a new task titled <strong>{task.title}</strong>."
@@ -32,22 +35,28 @@ def send_task_notification(user, task, action="update"):
     elif action == "reminder":
         subject = f"⏰ Misala | Task Reminder: {task.title}"
         intro = f"This is a friendly reminder that your task <strong>{task.title}</strong> is due soon."
+    elif action == "collaborator_added":
+        subject = f"👥 Misala | Added as Collaborator: {task.title}"
+        intro = f"You have been added as a collaborator on the task <strong>{task.title}</strong>."
+    elif action == "collaborator_removed":
+        subject = f"👋 Misala | Removed from Task: {task.title}"
+        intro = f"You have been removed as a collaborator from the task <strong>{task.title}</strong>."
     else:
         subject = f"🔔 Misala | Task Update: {task.title}"
         intro = f"Your task <strong>{task.title}</strong> has been updated."
 
-    # 🧩 Task status color
+    # 🧩 Task status color indicator
     status_color = (
-        "#198754" if task.status == "completed"
-        else "#ffc107" if task.status == "in_progress"
+        "#198754" if getattr(task, "status", "") == "completed"
+        else "#ffc107" if getattr(task, "status", "") == "in_progress"
         else "#dc3545"
     )
 
-    # 🔗 Dynamically generate your task link
+    # 🔗 Task URL
     site_url = get_site_url()
     task_url = f"{site_url}/tasks/{task.id}/"
 
-    # ✉️ HTML Email body
+    # ✉️ Email HTML
     message_html = format_html(f"""
     <html>
     <body style="margin:0; padding:0; background-color:#f4f6f8; font-family:Arial, sans-serif;">
@@ -73,7 +82,7 @@ def send_task_notification(user, task, action="update"):
                                 <p style="margin:20px 0; color:#333333;">
                                     <strong>Status:</strong>
                                     <span style="color:{status_color}; font-weight:bold;">
-                                        {task.status.replace('_', ' ').capitalize()}
+                                        {getattr(task, "status", "Pending").replace('_', ' ').capitalize()}
                                     </span>
                                 </p>
 
@@ -110,7 +119,7 @@ def send_task_notification(user, task, action="update"):
     </html>
     """)
 
-    # 📨 Create HTML email
+    # 📨 Compose Email
     email = EmailMultiAlternatives(
         subject=subject,
         body="This email requires an HTML-compatible viewer.",
@@ -119,7 +128,7 @@ def send_task_notification(user, task, action="update"):
     )
     email.attach_alternative(message_html, "text/html")
 
-    # ✅ Inline logo
+    # ✅ Inline logo (optional)
     logo_path = os.path.join("static", "picture", "logo.png")
     if os.path.exists(logo_path):
         with open(logo_path, "rb") as f:
@@ -128,5 +137,5 @@ def send_task_notification(user, task, action="update"):
             logo.add_header("Content-Disposition", "inline", filename="logo.png")
             email.attach(logo)
 
-    # ✅ Send it
+    # ✅ Send
     email.send()

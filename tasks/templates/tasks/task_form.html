@@ -1,7 +1,9 @@
 {% extends "tasks/base.html" %}
 {% load static %}
 
-{% block title %}{% if form.instance.pk %}Edit Task{% else %}Create Task{% endif %}{% endblock %}
+{% block title %}
+  {% if form.instance.pk %}Edit Task{% else %}Create Task{% endif %}
+{% endblock %}
 
 {% block content %}
 <div class="container mt-5">
@@ -25,12 +27,23 @@
         <div class="row g-3">
           {% for field in form %}
           <div class="col-md-6">
-            <div class="form-group">
+            <div class="form-group mb-3">
               <label class="form-label fw-semibold">{{ field.label }}</label>
-              {{ field }}
-              {% if field.help_text %}
-                <small class="form-text text-muted">{{ field.help_text }}</small>
+
+              {% if field.name == "collaborators" %}
+                <!-- ✅ Beautiful Multi-Select Dropdown -->
+                <select name="{{ field.name }}" id="id_collaborators" class="form-control select2-multiple" multiple="multiple">
+                  {% for user in field.field.queryset %}
+                    <option value="{{ user.pk }}"
+                      {% if field.value and user.pk in field.value %}selected{% endif %}>
+                      {{ user.get_full_name|default:user.username }}
+                    </option>
+                  {% endfor %}
+                </select>
+              {% else %}
+                {{ field }}
               {% endif %}
+
               {% if field.errors %}
                 <div class="text-danger small mt-1">{{ field.errors|striptags }}</div>
               {% endif %}
@@ -53,29 +66,60 @@
   </div>
 </div>
 
-<!-- Optional: subtle animation -->
+<!-- ✅ Select2 CSS & JS -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<!-- ✅ Activate Select2 -->
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    // Single select enhancement
+    $('#id_assigned_to').select2({
+      placeholder: "Select a user to assign",
+      allowClear: true,
+      width: '100%'
+    });
+
+    // Multi-select enhancement for collaborators
+    $('#id_collaborators').select2({
+      placeholder: "Select one or more collaborators",
+      allowClear: true,
+      width: '100%',
+      closeOnSelect: false
+    });
+  });
+</script>
+
+<!-- ✅ Styling -->
 <style>
-  .card {
-    animation: fadeInUp 0.5s ease-in-out;
-  }
-
+  .card { animation: fadeInUp 0.5s ease-in-out; }
   @keyframes fadeInUp {
-    from {
-      opacity: 0;
-      transform: translateY(10px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  input, select, textarea { border-radius: 10px !important; }
+  .form-label { color: #495057; }
+
+  /* Match Assigned_to and Collaborators look */
+  .select2-container .select2-selection--single,
+  .select2-container .select2-selection--multiple {
+    height: 38px !important;
+    border-radius: 10px;
+    border: 1px solid #ced4da;
+    padding: 5px;
   }
 
-  input, select, textarea {
-    border-radius: 10px !important;
+  .select2-selection__rendered {
+    line-height: 26px !important;
   }
 
-  .form-label {
-    color: #495057;
+  .select2-selection__choice {
+    background-color: #0d6efd !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 6px !important;
+    padding: 2px 8px !important;
+    margin-top: 4px !important;
   }
 </style>
 {% endblock %}

@@ -1,0 +1,75 @@
+{% extends "tasks/base.html" %}
+{% load static %}
+{% block title %}Verify OTP | Misala{% endblock %}
+
+{% block content %}
+<div class="container d-flex justify-content-center align-items-center" style="min-height: 90vh;">
+  <div class="card shadow-lg p-4 text-center" style="max-width: 450px; width: 100%; border-radius: 14px;">
+
+    <!-- Logo -->
+    <div class="mb-4">
+      <img src="{% static 'picture/logo.png' %}" alt="Misala Logo" width="80" class="mb-3">
+      <h3 class="text-primary fw-bold">Verify OTP</h3>
+      <p class="text-muted mb-4">
+        Enter the 6-digit code sent to your email address.
+      </p>
+    </div>
+
+    <!-- OTP Form -->
+    <form method="POST" id="otp-form">
+      {% csrf_token %}
+      <div class="d-flex justify-content-between mb-4">
+        {% for i in "123456" %}
+        <input 
+          type="text" 
+          name="otp_digit{{ forloop.counter }}" 
+          maxlength="1" 
+          class="form-control text-center otp-input fw-bold" 
+          style="width: 50px; height: 55px; font-size: 1.3rem; border-radius: 8px;"
+          required
+        >
+        {% endfor %}
+      </div>
+
+      <button type="submit" class="btn btn-primary w-100 btn-lg">Verify OTP</button>
+    </form>
+
+    <!-- Resend Link -->
+    <div class="mt-3">
+      <p class="text-muted small">
+        Didn’t receive the code?
+        <a href="{% url 'tasks:forgot_password' %}" class="text-primary fw-semibold text-decoration-none">
+          Resend OTP
+        </a>
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- Auto-focus and join digits -->
+<script>
+  const inputs = document.querySelectorAll('.otp-input');
+  inputs.forEach((input, index) => {
+    input.addEventListener('input', (e) => {
+      if (e.target.value.length === 1 && index < inputs.length - 1) {
+        inputs[index + 1].focus();
+      }
+    });
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Backspace' && e.target.value === '' && index > 0) {
+        inputs[index - 1].focus();
+      }
+    });
+  });
+
+  // Join all digits into one hidden field before submitting
+  document.getElementById('otp-form').addEventListener('submit', (e) => {
+    const otp = Array.from(inputs).map(i => i.value).join('');
+    const hidden = document.createElement('input');
+    hidden.type = 'hidden';
+    hidden.name = 'otp';
+    hidden.value = otp;
+    e.target.appendChild(hidden);
+  });
+</script>
+{% endblock %}

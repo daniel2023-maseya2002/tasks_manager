@@ -3,6 +3,7 @@ from django.contrib import admin
 from . import views
 from .views import signup_view, MyLoginView, my_logout_view, dashboard_view
 
+
 app_name = "tasks"
 
 urlpatterns = [
@@ -40,4 +41,10 @@ urlpatterns = [
 
     # ✅ Django admin
     path("admin/", admin.site.urls),
+
+    #forgot password
+
+    path('forgot-password/', views.forgot_password_view, name='forgot_password'),
+    path('verify-otp/', views.verify_otp_view, name='verify_otp'),
+    path('reset-password/', views.reset_password_view, name='reset_password'),
 ]

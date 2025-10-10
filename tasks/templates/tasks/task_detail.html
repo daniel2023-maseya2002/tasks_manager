@@ -6,25 +6,44 @@
 <div class="container py-4">
   <h2 class="fw-bold text-primary mb-4">{{ task.title }}</h2>
 
+  <!-- Task Info Card -->
   <div class="card shadow-lg border-0 rounded-3 mb-4">
     <div class="card-body">
       <p class="mb-2"><strong class="text-secondary">Description:</strong> {{ task.description|default:"No description provided." }}</p>
       <p class="mb-2"><strong class="text-secondary">Due Date:</strong> {{ task.due_date|date:"M d, Y" }}</p>
       <p class="mb-2"><strong class="text-secondary">Status:</strong>
         <span class="badge 
-          {% if task.status == 'completed' %}bg-success
-          {% elif task.status == 'in_progress' %}bg-warning text-dark
-          {% else %}bg-secondary
+          {% if task.status == 'Completed' %}bg-success
+          {% elif task.status == 'In Progress' %}bg-info text-dark
+          {% else %}bg-warning text-dark
           {% endif %}
         ">
           {{ task.get_status_display }}
         </span>
       </p>
       <p class="mb-2"><strong class="text-secondary">Owner:</strong> {{ task.owner.username }}</p>
-      <p class="mb-3"><strong class="text-secondary">Assigned To:</strong> {{ task.assigned_to.username|default:"Unassigned" }}</p>
+      <p class="mb-2"><strong class="text-secondary">Assigned To:</strong> {{ task.assigned_to.username|default:"Unassigned" }}</p>
 
+      <!-- Collaborators -->
+      <p class="mb-3"><strong class="text-secondary">Collaborators:</strong>
+        {% if task.collaborators.all %}
+          {% for user in task.collaborators.all %}
+            <a href="{% url 'tasks:user_tasks' user.id %}" class="badge 
+              {% if user.role == 'admin' %}bg-danger
+              {% else %}bg-primary
+              {% endif %}
+              text-white text-decoration-none me-1">
+              {{ user.username }}
+            </a>
+          {% endfor %}
+        {% else %}
+          <span class="text-muted">No collaborators yet.</span>
+        {% endif %}
+      </p>
+
+      <!-- Attachment -->
       {% if task.attachment %}
-        <div class="p-3 bg-light border rounded">
+        <div class="p-3 bg-light border rounded mb-2">
           <strong class="text-secondary">Attachment:</strong>
           <a href="{{ task.attachment.url }}" target="_blank" class="btn btn-outline-primary btn-sm ms-2">
             <i class="bi bi-download"></i> Download File
@@ -34,6 +53,7 @@
     </div>
   </div>
 
+  <!-- Comments Section -->
   <h4 class="mb-3 text-primary">Comments</h4>
 
   {% if comments %}
@@ -50,6 +70,7 @@
     <div class="alert alert-info shadow-sm">No comments yet.</div>
   {% endif %}
 
+  <!-- Add Comment Form -->
   {% if user.is_authenticated %}
     <hr class="my-4">
     <h5 class="mb-3 text-secondary">Add a Comment</h5>
@@ -60,6 +81,7 @@
     </form>
   {% endif %}
 
+  <!-- Back Button -->
   <div class="text-center mt-4">
     <a href="{% url 'tasks:task_list' %}" class="btn btn-outline-secondary">
       <i class="bi bi-arrow-left"></i> Back to All Tasks
