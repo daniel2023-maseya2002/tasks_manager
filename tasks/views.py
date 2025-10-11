@@ -623,15 +623,21 @@ def reset_password_view(request):
         password2 = request.POST.get('password2')
 
         if password1 == password2:
-            user = User.objects.get(email=email)
-            user.password = make_password(password1)
+            try:
+                user = User.objects.get(email=email)
+            except User.DoesNotExist:
+                messages.error(request, 'User not found.')
+                return redirect('tasks:forgot_password')
+
+            # ✅ Use Django's built-in secure method
+            user.set_password(password1)
             user.save()
 
             # Clean session
             request.session.pop('reset_email', None)
             request.session.pop('otp_verified', None)
 
-            messages.success(request, 'Password reset successfully! You can now login.')
+            messages.success(request, 'Password reset successfully! You can now log in.')
             return redirect('tasks:login')
         else:
             messages.error(request, 'Passwords do not match.')

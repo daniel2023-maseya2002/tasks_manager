@@ -1,31 +1,64 @@
 {% extends "tasks/base.html" %}
-{% block title %}Signup - TaskManager{% endblock %}
-
+{% block title %}Sign Up{% endblock %}
 {% block content %}
-<div class="row justify-content-center">
-  <div class="col-md-6">
-    <div class="card shadow-sm">
-      <div class="card-body">
-        <h3 class="mb-3">Create account</h3>
 
-        <form method="post" novalidate>
-          {% csrf_token %}
-          {% for field in form %}
-            <div class="mb-3">
-              {{ field.label_tag }}
-              {{ field }}
-              {% if field.errors %}
-                <div class="text-danger small mt-1">
-                  {% for err in field.errors %}{{ err }}<br>{% endfor %}
-                </div>
-              {% endif %}
+<div class="container mt-5" style="max-width: 500px;">
+    <h2 class="text-center mb-4">Create Your Account</h2>
+
+    <!-- ✅ Display success or error messages -->
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
-          {% endfor %}
+        {% endfor %}
+    {% endif %}
 
-          <button class="btn btn-primary w-100" type="submit">Sign up</button>
-        </form>
-      </div>
-    </div>
-  </div>
+    <!-- ✅ Display form validation errors (e.g., duplicate email) -->
+    {% if form.errors %}
+        <div class="alert alert-danger">
+            <ul class="mb-0">
+                {% for field, errors in form.errors.items %}
+                    {% for error in errors %}
+                        <li><strong>{{ field|title }}:</strong> {{ error }}</li>
+                    {% endfor %}
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+
+    <form method="post" novalidate>
+        {% csrf_token %}
+        <div class="mb-3">
+            {{ form.username.label_tag }}
+            {{ form.username }}
+        </div>
+        <div class="mb-3">
+            {{ form.email.label_tag }}
+            {{ form.email }}
+        </div>
+        <div class="mb-3">
+            {{ form.password1.label_tag }}
+            {{ form.password1 }}
+        </div>
+        <div class="mb-3">
+            {{ form.password2.label_tag }}
+            {{ form.password2 }}
+        </div>
+        <div class="mb-3">
+            {{ form.role.label_tag }}
+            {{ form.role }}
+        </div>
+
+        <div class="d-grid">
+            <button type="submit" class="btn btn-primary">Create Account</button>
+        </div>
+    </form>
+
+    <p class="mt-3 text-center">
+        Already have an account? <a href="{% url 'tasks:login' %}">Login here</a>
+    </p>
 </div>
+
 {% endblock %}

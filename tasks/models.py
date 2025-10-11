@@ -5,12 +5,14 @@ from django.utils import timezone
 from datetime import timedelta
 from django.contrib.postgres.fields import ArrayField
 from django.conf import settings
+
 # Create your models here.
 class CustomUser(AbstractUser):
     ROLE_CHOICES = (
         ("admin", "Admin"),
         ("user", "User"),
     )
+    email = models.EmailField(unique=True)
     role = models.CharField(max_length=10, choices=ROLE_CHOICES, default="user")
 
     def __str__(self):
@@ -120,4 +122,3 @@ class PasswordResetOTP(models.Model):
         return f"{self.user.username} - {self.otp_code}"
     
 
-    
