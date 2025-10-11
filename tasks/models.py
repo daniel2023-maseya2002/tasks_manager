@@ -14,6 +14,14 @@ class CustomUser(AbstractUser):
     )
     email = models.EmailField(unique=True)
     role = models.CharField(max_length=10, choices=ROLE_CHOICES, default="user")
+    # 🆕 Profile fields
+    phone_number = models.CharField(max_length=15, blank=True, null=True)
+    address = models.TextField(blank=True, null=True)
+    bio = models.TextField(blank=True, null=True)
+    profile_picture = models.ImageField(upload_to='profile_pics/', blank=True, null=True)
+    email_notifications = models.BooleanField(default=True)
+
+
 
     def __str__(self):
         return f"{self.username} ({self.role})"

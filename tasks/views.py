@@ -4,7 +4,7 @@ from django.urls import reverse_lazy
 from django.contrib import messages
 from django.contrib.auth import login as auth_login, logout, get_user_model
 from django.contrib.auth.views import LoginView, LogoutView
-from .forms import CustomUserCreationForm, TaskForm, CommentForm, CustomUserUpdateForm
+from .forms import CustomUserCreationForm, TaskForm, CommentForm, CustomUserUpdateForm, UserEditForm
 from .models import Task, CustomUser, Notification, Comment, UserActivity, PasswordResetOTP
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.db import models
@@ -20,6 +20,7 @@ from datetime import date, timedelta
 from .utils.email_templates import send_task_notification
 from django.contrib.auth.hashers import make_password
 from django.core.mail import send_mail
+from django.http import JsonResponse
 
 
 
@@ -380,7 +381,16 @@ def mark_notification_read(request, notification_id):
 @login_required
 def notification_view(request):
     notifications = Notification.objects.filter(recipient=request.user).order_by('-created_at')
+
+    # Mark all unread as read automatically
+    unread_notifications = notifications.filter(is_read=False)
+    unread_notifications.update(is_read=True)
     return render(request, "tasks/notifications.html", {"notifications": notifications})
+
+@login_required
+def unread_count_api(request):
+    count = Notification.objects.filter(recipient=request.user, is_read=False).count()
+    return JsonResponse({'unread_count': count})
 
 @login_required
 def mark_all_notifications_read(request):
@@ -643,3 +653,36 @@ def reset_password_view(request):
             messages.error(request, 'Passwords do not match.')
 
     return render(request, 'tasks/reset_password.html')
+
+
+@login_required
+def profile_view(request):
+    user = request.user
+    if request.method == 'POST':
+        form = UserEditForm(request.POST, request.FILES, instance=user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Your profile has been updated successfully.')
+            return redirect('tasks:profile')
+    else:
+        form = UserEditForm(instance=user)
+
+    return render(request, 'tasks/profile.html', {'form': form})
+
+@login_required
+def settings_view(request):
+    user = request.user  # CustomUser instance
+
+    if request.method == "POST":
+        # Update editable fields
+        user.phone_number = request.POST.get("phone_number")
+        user.address = request.POST.get("address")
+        user.bio = request.POST.get("bio")
+        if request.FILES.get("profile_picture"):
+            user.profile_picture = request.FILES["profile_picture"]
+        user.email_notifications = request.POST.get("email_notifications") == "on"
+        user.save()
+        messages.success(request, "Settings updated successfully!")
+        return redirect("tasks:settings")
+
+    return render(request, "tasks/settings.html", {"user": user})

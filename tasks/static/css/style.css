@@ -201,3 +201,15 @@ h2.dashboard-title {
 .form-container button:hover {
   background: #0056b3;
 }
+
+a img.rounded-circle:hover {
+    transform: scale(1.1);
+    transition: 0.2s;
+    cursor: pointer;
+}
+
+.dropdown-toggle img.rounded-circle:hover {
+    transform: scale(1.1);
+    transition: 0.2s;
+    cursor: pointer;
+}

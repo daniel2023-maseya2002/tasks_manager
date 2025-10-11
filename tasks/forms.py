@@ -110,3 +110,12 @@ class PasswordResetForm(forms.Form):
             'placeholder': 'Enter your email address',
         })
     )
+
+class UserEditForm(forms.ModelForm):
+    class Meta:
+        model = CustomUser
+        fields = ['username', 'email', 'first_name', 'last_name', 'phone_number', 'address', 'bio', 'profile_picture']
+        # Exclude 'role' so they can’t change it
+        widgets = {
+            'bio': forms.Textarea(attrs={'rows': 3}),
+        }

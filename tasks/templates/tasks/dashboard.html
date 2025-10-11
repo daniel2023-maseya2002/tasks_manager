@@ -13,8 +13,10 @@
         <strong>{{ request.user.get_full_name|default:request.user.username }}</strong>!
       </p>
     </div>
+    
 
     <div class="d-flex gap-2">
+
       <!-- 🔔 Notifications Button -->
       <a href="{% url 'tasks:notification_view' %}" class="btn btn-outline-info position-relative">
         <i class="bi bi-bell"></i> Notifications
