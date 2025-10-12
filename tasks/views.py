@@ -1,4 +1,5 @@
 import random
+import time
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse_lazy
 from django.contrib import messages
@@ -21,6 +22,10 @@ from .utils.email_templates import send_task_notification
 from django.contrib.auth.hashers import make_password
 from django.core.mail import send_mail
 from django.http import JsonResponse
+from django.views.decorators.http import require_POST
+from django.core.cache import cache
+from .ai_service import generate_task_summary
+from .ai_utils import generate_task_summary
 
 
 
@@ -686,3 +691,36 @@ def settings_view(request):
         return redirect("tasks:settings")
 
     return render(request, "tasks/settings.html", {"user": user})
+
+RATE_LIMIT_SECONDS = 10  # allow one request every 10s per user
+
+@login_required
+@require_POST
+def ai_task_summary_view(request):
+    user = request.user
+
+    # basic per-user rate limiting
+    key = f"ai_summary_rate_{user.id}"
+    last = cache.get(key)
+    now = time.time()
+    if last and now - last < RATE_LIMIT_SECONDS:
+        return JsonResponse({"error": "Too many requests. Please wait a few seconds."}, status=429)
+    cache.set(key, now, RATE_LIMIT_SECONDS)
+
+    # check for cached summary (reduce cost)
+    cache_key = f"ai_summary_cache_{user.id}"
+    cached = cache.get(cache_key)
+    if cached:
+        return JsonResponse({"summary": cached, "cached": True})
+
+    # Collect tasks relevant to the user
+    tasks = Task.objects.filter(Q(owner=user) | Q(assigned_to=user)).order_by("due_date")
+
+    try:
+        summary = generate_task_summary(tasks)
+    except Exception as e:
+        return JsonResponse({"error": "AI service error"}, status=500)
+
+    # cache summary for short time (e.g., 60 sec)
+    cache.set(cache_key, summary, 60)
+    return JsonResponse({"summary": summary, "cached": False})

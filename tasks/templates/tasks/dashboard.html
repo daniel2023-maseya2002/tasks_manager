@@ -13,10 +13,8 @@
         <strong>{{ request.user.get_full_name|default:request.user.username }}</strong>!
       </p>
     </div>
-    
 
     <div class="d-flex gap-2">
-
       <!-- 🔔 Notifications Button -->
       <a href="{% url 'tasks:notification_view' %}" class="btn btn-outline-info position-relative">
         <i class="bi bi-bell"></i> Notifications
@@ -38,7 +36,22 @@
     </div>
   </div>
 
-  <!-- ⚠️ Upcoming Deadlines (Collapsible) -->
+  <!-- 🤖 AI Summary Integration -->
+  <div class="mb-3">
+    <button id="ai-summary-btn" class="btn btn-outline-primary">
+      <i class="bi bi-brain"></i> Generate AI Summary
+    </button>
+    <span id="ai-spinner" class="ms-2" style="display:none;">Loading…</span>
+  </div>
+
+  <div id="ai-summary-result" class="card mt-3 shadow-sm" style="display:none;">
+    <div class="card-body">
+      <h5 class="card-title"><i class="bi bi-stars"></i> AI Summary</h5>
+      <div id="ai-summary-text" class="text-secondary"></div>
+    </div>
+  </div>
+
+  <!-- ⚠️ Upcoming Deadlines -->
   {% if upcoming_tasks %}
     <div class="accordion mb-4 shadow-sm" id="upcomingTasksAccordion">
       <div class="accordion-item border-warning">
@@ -53,8 +66,7 @@
               {% for task in upcoming_tasks %}
                 <li class="list-group-item d-flex justify-content-between align-items-center">
                   <div>
-                    <strong>{{ task.title }}</strong>
-                    <br>
+                    <strong>{{ task.title }}</strong><br>
                     <small>Due: <span class="text-danger fw-semibold">{{ task.due_date|date:"M d, Y" }}</span></small>
                   </div>
                   {% if not task.is_completed %}
@@ -115,7 +127,7 @@
     </div>
   </div>
 
-  <!-- 📊 Task Summary Cards -->
+  <!-- 📊 Task Summary -->
   <div class="row mb-4">
     <div class="col-md-4 mb-3">
       <div class="card bg-warning text-dark text-center shadow-sm">
@@ -143,7 +155,7 @@
     </div>
   </div>
 
-  <!-- 👥 Admin: User List -->
+  <!-- 👥 User List -->
   {% if request.user.is_superuser and users %}
     <div class="card shadow-sm mb-4">
       <div class="card-header bg-dark text-white">
@@ -236,4 +248,65 @@
     </a>
   </div>
 </div>
+
+<!-- 🧠 AI Summary Script -->
+<script>
+function getCookie(name) {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== '') {
+      const cookies = document.cookie.split(';');
+      for (let cookie of cookies) {
+          cookie = cookie.trim();
+          if (cookie.startsWith(name + '=')) {
+              cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+              break;
+          }
+      }
+  }
+  return cookieValue;
+}
+const csrftoken = getCookie('csrftoken');
+
+document.getElementById('ai-summary-btn').addEventListener('click', async function () {
+  const btn = this;
+  const spinner = document.getElementById('ai-spinner');
+  const resultCard = document.getElementById('ai-summary-result');
+  const resultText = document.getElementById('ai-summary-text');
+
+  btn.disabled = true;
+  spinner.style.display = 'inline';
+  resultCard.style.display = 'none';
+  resultText.textContent = '';
+
+  try {
+    const resp = await fetch("{% url 'tasks:ai_summary' %}", {
+      method: 'POST',
+      headers: {
+        'X-CSRFToken': csrftoken,
+        'Accept': 'application/json',
+      },
+    });
+
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      throw new Error(err.error || 'Request failed');
+    }
+
+    const data = await resp.json();
+    if (data.summary) {
+      resultText.textContent = data.summary;
+      resultCard.style.display = 'block';
+    } else {
+      resultText.textContent = data.error || 'No summary returned.';
+      resultCard.style.display = 'block';
+    }
+  } catch (e) {
+    resultText.textContent = 'Error: ' + (e.message || e);
+    resultCard.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    spinner.style.display = 'none';
+  }
+});
+</script>
 {% endblock %}

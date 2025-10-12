@@ -54,4 +54,7 @@ urlpatterns = [
 
     path('api/unread-count/', views.unread_count_api, name='unread_count_api'),
 
+    # AI service
+    path("ai-summary/", views.ai_task_summary_view, name="ai_summary"),
+
 ]
