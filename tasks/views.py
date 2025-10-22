@@ -26,12 +26,22 @@ from django.views.decorators.http import require_POST
 from django.core.cache import cache
 from .ai_service import generate_task_summary
 from .ai_utils import generate_task_summary
+from django.utils.translation import gettext as _
+from django.core.paginator import Paginator
+from django.urls import reverse
+from django.contrib.admin.views.decorators import staff_member_required
 
 
 
+
+message = _("Welcome to your dashboard!")
 User = get_user_model()
 
 # Create your views here.
+
+def landing_page(request):
+    return render(request, "landing.html")
+
 def signup_view(request):
     """Register new users."""
     if request.method == "POST":
@@ -49,17 +59,46 @@ class MyLoginView(LoginView):
     template_name = "tasks/login.html"
 
     def form_valid(self, form):
-        """When login succeeds, record user activity."""
+        """
+        Called when form is valid and before the user is logged in.
+        We keep a defensive check to prevent blocked users from logging in
+        and give a friendly message. Then record the successful login.
+        """
         user = form.get_user()
+
+        # Defensive check: prevent block/disabled users from logging in
+        try:
+            # If you set is_active=False when blocking, this will catch it;
+            # but we also check status explicitly for clarity.
+            if hasattr(user, "status") and user.status == CustomUser.Status.BLOCKED:
+                messages.error(self.request, "Your account has been blocked. Contact the administrator.")
+                # Don't call super().form_valid -> do not log the user in
+                return redirect(reverse_lazy("tasks:login") + "?blocked=1")
+
+            if not user.is_active:
+                # This will usually be caught by AuthenticationForm.confirm_login_allowed,
+                # but being defensive here is ok.
+                messages.error(self.request, "Your account is disabled or not active.")
+                return redirect(reverse_lazy("tasks:login"))
+        except Exception:
+            # be defensive: in any unexpected error, prevent login rather than crash
+            messages.error(self.request, "Login prevented due to an unexpected issue. Contact admin.")
+            return redirect(reverse_lazy("tasks:login"))
+
+        # Proceed with the normal login flow (this actually calls auth_login)
         response = super().form_valid(form)
 
-        # Record login details
-        UserActivity.objects.create(
-            user=user,
-            ip_address=self.request.META.get('REMOTE_ADDR'),
-            user_agent=self.request.META.get('HTTP_USER_AGENT', 'Unknown'),
-            login_time=timezone.now(),
-        )
+        # Record login details AFTER successful login
+        try:
+            UserActivity.objects.create(
+                user=user,
+                ip_address=self.request.META.get('REMOTE_ADDR'),
+                user_agent=self.request.META.get('HTTP_USER_AGENT', 'Unknown'),
+                login_time=timezone.now(),
+            )
+        except Exception:
+            # Do not block login on logging errors — optionally log the exception
+            pass
 
         return response
 
@@ -68,7 +107,6 @@ def my_logout_view(request):
     """Logout user via GET and redirect to login page."""
     logout(request)
     return redirect(reverse_lazy("tasks:login"))
-
 
 
 @login_required
@@ -269,36 +307,113 @@ def is_admin(user):
 
 
 
-# Admin: View All users
 @login_required
 @user_passes_test(is_admin)
 def manage_users(request):
-    # Get search and role filter parameters
-    search_query = request.GET.get("search", "")
-    role_filter = request.GET.get("role", "")
+    """
+    Admin UI:
+    - GET: show a paginated list of users with filters (search, role, status)
+    - POST: perform action on a single user (block / warn /activate)
+    """
+    # --- Handle POST actions first (block / warn / activate) ---
+    if request.method == "POST":
+        target_id = request.POST.get("user_id")
+        action = request.POST.get("action")
+        note = request.POST.get("note", "").strip()
 
-    # Get all users
-    users = CustomUser.objects.all()
+        if not target_id or not action:
+            messages.error(request, _("Invalid action parameters."))
+            return redirect(reverse("tasks:manage_users"))
 
-    # Filter by username (case-insensitive)
+        target = get_object_or_404(CustomUser, pk=target_id)
+
+        # Safety checks
+        if target.is_superuser:
+            messages.error(request, _("You cannot perform this action on a superuser."))
+            return redirect(reverse("tasks:manage_users"))
+
+        if target == request.user and action in ("block",):
+            messages.error(request, _("You cannot block yourself."))
+            return redirect(reverse("tasks:manage_users"))
+
+        if action == "block":
+            target.block(reason=note or _("Blocked by admin"))
+            messages.success(request, _("User %(username)s has been blocked.") % {"username": target.username})
+        elif action == "warn":
+            target.warn(note=note or _("Warning issued by admin"))
+            messages.success(request, _("User %(username)s has been warned.") % {"username": target.username})
+        elif action == "activate":
+            target.activate()
+            messages.success(request, _("User %(username)s has been activated.") % {"username": target.username})
+        else:
+            messages.error(request, _("Unknown action."))
+
+        return redirect(reverse("tasks:manage_users"))
+
+    # --- GET: show list with filters & pagination ---
+    search_query = request.GET.get("search", "").strip()
+    role_filter = request.GET.get("role", "").strip().lower()  # admin / user
+    status_filter = request.GET.get("status", "").strip().lower()  # active / warned / blocked
+    page_num = request.GET.get("page", 1)
+    per_page = 20  # change as you like
+
+    users_qs = CustomUser.objects.all().order_by("-date_joined")
+
     if search_query:
-        users = users.filter(username__icontains=search_query)
+        users_qs = users_qs.filter(
+            models.Q(username__icontains=search_query) |
+            models.Q(email__icontains=search_query) |
+            models.Q(first_name__icontains=search_query) |
+            models.Q(last_name__icontains=search_query)
+        )
 
-    # Filter by role using is_staff
     if role_filter:
-        if role_filter.lower() == "admin":
-            users = users.filter(is_staff=True)
-        elif role_filter.lower() == "user":
-            users = users.filter(is_staff=False)
+        if role_filter == "admin":
+            users_qs = users_qs.filter(is_staff=True)
+        elif role_filter == "user":
+            users_qs = users_qs.filter(is_staff=False)
+
+    if status_filter and status_filter in {s.value for s in CustomUser.Status}:
+        users_qs = users_qs.filter(status=status_filter)
+
+    paginator = Paginator(users_qs, per_page)
+    page = paginator.get_page(page_num)
 
     context = {
-        "users": users,
+        # <--- key fix: pass "users" expected by your template
+        "users": page.object_list,
+        "users_page": page,
         "search_query": search_query,
         "role_filter": role_filter,
+        "status_filter": status_filter,
+        "status_choices": CustomUser.Status.choices,
     }
-
     return render(request, "tasks/manage_users.html", context)
 
+
+@staff_member_required
+def manage_users_action(request, user_id):
+    user = get_object_or_404(CustomUser, pk=user_id)
+    action = request.POST.get("action")
+    note = request.POST.get("note", "")
+
+    if user.is_superuser:
+        messages.error(request, _("Cannot perform this action on a superuser."))
+        return redirect(reverse("tasks:manage_users"))
+
+    if action == "block":
+        user.block(reason=note)
+        messages.success(request, _("User %(username)s has been blocked.") % {"username": user.username})
+    elif action == "warn":
+        user.warn(note=note)
+        messages.success(request, _("User %(username)s has been warned.") % {"username": user.username})
+    elif action == "activate":
+        user.activate()
+        messages.success(request, _("User %(username)s has been activated.") % {"username": user.username})
+    else:
+        messages.error(request, _("Unknown action."))
+
+    return redirect(reverse("tasks:manage_users"))
 
 # Admin create a new user
 @login_required

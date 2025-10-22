@@ -1,0 +1,396 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-10-22 01:53+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+#: .\task_manager\settings.py:55
+msgid "English"
+msgstr ""
+
+#: .\task_manager\settings.py:56
+msgid "French"
+msgstr ""
+
+#: .\tasks\admin.py:11
+msgid "Block selected users"
+msgstr ""
+
+#: .\tasks\admin.py:15
+#, python-format
+msgid "Cannot block a superuser: %(user)s"
+msgstr ""
+
+#: .\tasks\admin.py:17
+msgid "Blocked by admin: bulk action"
+msgstr ""
+
+#: .\tasks\admin.py:18
+msgid "Selected users have been blocked."
+msgstr ""
+
+#: .\tasks\admin.py:21
+msgid "Mark selected users as warned"
+msgstr ""
+
+#: .\tasks\admin.py:24 .\tasks\views.py:337
+msgid "Warning issued by admin"
+msgstr ""
+
+#: .\tasks\admin.py:25
+msgid "Selected users have been flagged as warned."
+msgstr ""
+
+#: .\tasks\admin.py:28
+msgid "Unblock / Activate selected users"
+msgstr ""
+
+#: .\tasks\admin.py:32
+msgid "Selected users have been activated."
+msgstr ""
+
+#: .\tasks\admin.py:42
+msgid "Role & Status"
+msgstr ""
+
+#: .\tasks\models.py:12 .\tasks\templates\tasks\manage_users.html:13
+#: .\tasks\templates\tasks\manage_users.html:59
+msgid "Admin"
+msgstr ""
+
+#: .\tasks\models.py:13 .\tasks\models.py:64
+#: .\tasks\templates\tasks\manage_users.html:14
+#: .\tasks\templates\tasks\manage_users.html:61
+msgid "User"
+msgstr ""
+
+#: .\tasks\models.py:17 .\tasks\templates\tasks\manage_users.html:67
+msgid "Active"
+msgstr ""
+
+#: .\tasks\models.py:18 .\tasks\templates\tasks\manage_users.html:69
+msgid "Warned"
+msgstr ""
+
+#: .\tasks\models.py:19 .\tasks\templates\tasks\manage_users.html:71
+msgid "Blocked"
+msgstr ""
+
+#: .\tasks\models.py:25 .\tasks\models.py:81
+#: .\tasks\templates\tasks\manage_users.html:45
+msgid "Status"
+msgstr ""
+
+#: .\tasks\models.py:26
+msgid "User account status: controls login and admin visibility"
+msgstr ""
+
+#: .\tasks\models.py:30
+msgid "Warning note"
+msgstr ""
+
+#: .\tasks\models.py:65
+msgid "Users"
+msgstr ""
+
+#: .\tasks\models.py:71
+msgid "Pending"
+msgstr ""
+
+#: .\tasks\models.py:72
+msgid "In Progress"
+msgstr ""
+
+#: .\tasks\models.py:73
+msgid "Completed"
+msgstr ""
+
+#: .\tasks\models.py:76
+msgid "Title"
+msgstr ""
+
+#: .\tasks\models.py:77
+msgid "Description"
+msgstr ""
+
+#: .\tasks\models.py:78
+msgid "Due date"
+msgstr ""
+
+#: .\tasks\models.py:82
+msgid "Is completed"
+msgstr ""
+
+#: .\tasks\models.py:84
+msgid "Reminder sent"
+msgstr ""
+
+#: .\tasks\models.py:89
+msgid "List of days before due date for which reminders have already been sent"
+msgstr ""
+
+#: .\tasks\models.py:123
+msgid "No Owner"
+msgstr ""
+
+#: .\tasks\models.py:134
+msgid "Task"
+msgstr ""
+
+#: .\tasks\models.py:135
+msgid "Tasks"
+msgstr ""
+
+#: .\tasks\models.py:140
+msgid "Message"
+msgstr ""
+
+#: .\tasks\models.py:142
+msgid "Read"
+msgstr ""
+
+#: .\tasks\models.py:150
+msgid "Notification"
+msgstr ""
+
+#: .\tasks\models.py:151 .\tasks\templates\tasks\base.html:51
+msgid "Notifications"
+msgstr ""
+
+#: .\tasks\models.py:157
+msgid "Content"
+msgstr ""
+
+#: .\tasks\models.py:165
+msgid "Comment"
+msgstr ""
+
+#: .\tasks\models.py:166
+msgid "Comments"
+msgstr ""
+
+#: .\tasks\models.py:180
+msgid "User activity"
+msgstr ""
+
+#: .\tasks\models.py:181
+msgid "User activities"
+msgstr ""
+
+#: .\tasks\models.py:186
+msgid "OTP code"
+msgstr ""
+
+#: .\tasks\models.py:198
+msgid "Password reset OTP"
+msgstr ""
+
+#: .\tasks\models.py:199
+msgid "Password reset OTPs"
+msgstr ""
+
+#: .\tasks\templates\tasks\base.html:9
+msgid "Task Manager"
+msgstr ""
+
+#: .\tasks\templates\tasks\base.html:21
+msgid "TaskManager"
+msgstr ""
+
+#: .\tasks\templates\tasks\base.html:33
+#: .\tasks\templates\tasks\manage_users.html:3
+#: .\tasks\templates\tasks\manage_users.html:6
+msgid "Manage Users"
+msgstr ""
+
+#: .\tasks\templates\tasks\base.html:38
+msgid "Reports"
+msgstr ""
+
+#: .\tasks\templates\tasks\base.html:45
+msgid "Calendar"
+msgstr ""
+
+#: .\tasks\templates\tasks\base.html:55
+msgid "unread notifications"
+msgstr ""
+
+#: .\tasks\templates\tasks\base.html:67
+msgid "Select language"
+msgstr ""
+
+#: .\tasks\templates\tasks\base.html:77
+msgid "Hi,"
+msgstr ""
+
+#: .\tasks\templates\tasks\base.html:83 .\tasks\templates\tasks\base.html:89
+msgid "Profile"
+msgstr ""
+
+#: .\tasks\templates\tasks\base.html:90
+msgid "Settings"
+msgstr ""
+
+#: .\tasks\templates\tasks\base.html:92
+msgid "Logout"
+msgstr ""
+
+#: .\tasks\templates\tasks\base.html:98
+msgid "Signup"
+msgstr ""
+
+#: .\tasks\templates\tasks\base.html:101
+msgid "Login"
+msgstr ""
+
+#: .\tasks\templates\tasks\base.html:115
+msgid "Close"
+msgstr ""
+
+#: .\tasks\templates\tasks\manage_users.html:10
+msgid "Search by username, email or name"
+msgstr ""
+
+#: .\tasks\templates\tasks\manage_users.html:11
+msgid "Role filter"
+msgstr ""
+
+#: .\tasks\templates\tasks\manage_users.html:12
+msgid "All Roles"
+msgstr ""
+
+#: .\tasks\templates\tasks\manage_users.html:19
+msgid "Status filter"
+msgstr ""
+
+#: .\tasks\templates\tasks\manage_users.html:20
+msgid "All statuses"
+msgstr ""
+
+#: .\tasks\templates\tasks\manage_users.html:27
+msgid "Filter"
+msgstr ""
+
+#: .\tasks\templates\tasks\manage_users.html:28
+msgid "Reset"
+msgstr ""
+
+#: .\tasks\templates\tasks\manage_users.html:33
+msgid "+ Add New User"
+msgstr ""
+
+#: .\tasks\templates\tasks\manage_users.html:34
+msgid "Back to Dashboard"
+msgstr ""
+
+#: .\tasks\templates\tasks\manage_users.html:41
+msgid "ID"
+msgstr ""
+
+#: .\tasks\templates\tasks\manage_users.html:42
+msgid "Username"
+msgstr ""
+
+#: .\tasks\templates\tasks\manage_users.html:43
+msgid "Email"
+msgstr ""
+
+#: .\tasks\templates\tasks\manage_users.html:44
+msgid "Role"
+msgstr ""
+
+#: .\tasks\templates\tasks\manage_users.html:46
+msgid "Actions"
+msgstr ""
+
+#: .\tasks\templates\tasks\manage_users.html:57
+msgid "Superuser"
+msgstr ""
+
+#: .\tasks\templates\tasks\manage_users.html:79
+msgid "Edit"
+msgstr ""
+
+#: .\tasks\templates\tasks\manage_users.html:80
+msgid "Delete"
+msgstr ""
+
+#: .\tasks\templates\tasks\manage_users.html:83
+msgid "No actions"
+msgstr ""
+
+#: .\tasks\templates\tasks\manage_users.html:91
+msgid "Warn"
+msgstr ""
+
+#: .\tasks\templates\tasks\manage_users.html:96
+msgid "Are you sure you want to block this user?"
+msgstr ""
+
+#: .\tasks\templates\tasks\manage_users.html:101
+msgid "Block"
+msgstr ""
+
+#: .\tasks\templates\tasks\manage_users.html:110
+msgid "Activate"
+msgstr ""
+
+#: .\tasks\templates\tasks\manage_users.html:117
+msgid "No users found."
+msgstr ""
+
+#: .\tasks\views.py:35
+msgid "Welcome to your dashboard!"
+msgstr ""
+
+#: .\tasks\views.py:319
+msgid "Invalid action parameters."
+msgstr ""
+
+#: .\tasks\views.py:326
+msgid "You cannot perform this action on a superuser."
+msgstr ""
+
+#: .\tasks\views.py:330
+msgid "You cannot block yourself."
+msgstr ""
+
+#: .\tasks\views.py:334
+msgid "Blocked by admin"
+msgstr ""
+
+#: .\tasks\views.py:335 .\tasks\views.py:398
+#, python-format
+msgid "User %(username)s has been blocked."
+msgstr ""
+
+#: .\tasks\views.py:338 .\tasks\views.py:401
+#, python-format
+msgid "User %(username)s has been warned."
+msgstr ""
+
+#: .\tasks\views.py:341 .\tasks\views.py:404
+#, python-format
+msgid "User %(username)s has been activated."
+msgstr ""
+
+#: .\tasks\views.py:343 .\tasks\views.py:406
+msgid "Unknown action."
+msgstr ""
+
+#: .\tasks\views.py:393
+msgid "Cannot perform this action on a superuser."
+msgstr ""

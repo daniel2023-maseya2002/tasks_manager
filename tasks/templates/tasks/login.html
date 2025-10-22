@@ -1,75 +1,72 @@
-{% extends "tasks/base.html" %}
+{% load widget_tweaks %}
+{% load i18n %}
 {% load static %}
-{% block title %}Login | Misala{% endblock %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Login | Misala</title>
 
-{% block content %}
-<div class="container d-flex align-items-center justify-content-center" style="min-height: 100vh; background-color: #f8f9fa;">
-  <div class="card shadow-lg border-0 p-4" style="width: 100%; max-width: 420px; border-radius: 16px;">
-    
-    <!-- Logo + Header -->
-    <div class="text-center mb-4">
-      <img src="{% static 'picture/logo.png' %}" alt="Misala Logo" width="90" class="mb-3">
-      <h3 class="fw-bold text-primary mb-1">Welcome Back</h3>
-      <p class="text-muted">Log in to continue to your dashboard</p>
-    </div>
+  <!-- Zen Dots + Poppins -->
+  <link href="https://fonts.googleapis.com/css2?family=Zen+Dots&family=Poppins:wght@300;400;500&display=swap" rel="stylesheet">
 
-    <!-- Login Form -->
-    <form method="post" novalidate>
-      {% csrf_token %}
-      {{ form.non_field_errors }}
+  <!-- Bootstrap for basic normalization (optional) -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
 
-      <div class="mb-3">
-        <label for="{{ form.username.id_for_label }}" class="form-label fw-semibold">Username</label>
-        {{ form.username }}
+  <!-- Local CSS (bust cache by bumping ?v=) -->
+  <link rel="stylesheet" href="{% static 'css/login.css' %}?v=8">
+</head>
+<body>
+
+  <div class="page-wrapper">
+    <div class="login-card" role="main" aria-label="Login card">
+      <!-- Left -->
+      <div class="panel-left">
+        <img src="{% static 'picture/logo 1.png' %}" alt="Misala logo" class="logo-img">
+        <div class="left-inner">
+          <h1 class="left-title">Everything to<br>Start with!</h1>
+          <p class="left-desc">
+            Log in to access your personal space where productivity meets purpose.
+            Stay connected, track your progress, and continue building success — one goal, one step at a time.
+          </p>
+        </div>
       </div>
 
-      <div class="mb-3">
-        <label for="{{ form.password.id_for_label }}" class="form-label fw-semibold">Password</label>
-        {{ form.password }}
+      <!-- Divider (visual) -->
+      <div class="divider" aria-hidden="true"></div>
+
+      <!-- Right -->
+      <div class="panel-right">
+        <div class="right-inner">
+          <h2 class="form-title">Login</h2>
+
+          <form method="post" action="">
+            {% csrf_token %}
+            <label for="id_username" class="label">Username</label>
+            <input id="id_username" name="username" type="text" class="input-field" placeholder="Maseya_22" value="{{ request.POST.username|default:'' }}">
+
+            <label for="id_password" class="label" style="margin-top:14px;">Password</label>
+            <div style="position:relative;">
+              <input id="id_password" name="password" type="password" class="input-field pw-field" placeholder="Enter password">
+              <button type="button" class="toggle-pw" aria-label="Toggle password visibility"><i class="bi bi-eye-slash"></i></button>
+            </div>
+
+            <div style="display:flex;justify-content:flex-end;margin-top:10px;">
+              <a href="{% url 'tasks:forgot_password' %}" class="forgot-link">Forgot Password?</a>
+            </div>
+
+            <button type="submit" class="sign-btn">Sign In</button>
+
+            <div class="signup-row">Don’t have an account? <a href="{% url 'tasks:signup' %}" class="signup-link">SIGN UP NOW!</a></div>
+          </form>
+        </div>
       </div>
-
-      <!-- Forgot Password (OTP-based) -->
-      <div class="text-end mb-3">
-        <a href="{% url 'tasks:forgot_password' %}" class="text-decoration-none small text-primary fw-semibold">
-          Forgot Password?
-        </a>
-      </div>
-
-      <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold">
-        Log In
-      </button>
-    </form>
-
-    <!-- Divider -->
-    <div class="text-center mt-4">
-      <p class="text-muted mb-0">
-        Don’t have an account?
-        <a href="{% url 'tasks:signup' %}" class="fw-semibold text-decoration-none text-primary">Sign Up</a>
-      </p>
     </div>
   </div>
-</div>
 
-<!-- Styles -->
-<style>
-  body {
-    background-color: #f8f9fa;
-  }
-  input {
-    border-radius: 10px !important;
-    padding: 10px;
-    border: 1px solid #ced4da;
-  }
-  input:focus {
-    border-color: #0d6efd !important;
-    box-shadow: 0 0 0 0.15rem rgba(13, 110, 253, 0.25);
-  }
-  .card {
-    animation: fadeIn 0.6s ease-in-out;
-  }
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-</style>
-{% endblock %}
+  <!-- optional bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+  <script src="{% static 'js/login.js' %}"></script>
+</body>
+</html>

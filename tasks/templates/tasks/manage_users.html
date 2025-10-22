@@ -1,36 +1,49 @@
 {% extends "tasks/base.html" %}
-{% block title %}Manage Users{% endblock %}
+{% load i18n %}
+{% block title %}{% trans "Manage Users" %}{% endblock %}
 
 {% block content %}
-<h2 class="page-title">👥 Manage Users</h2>
+<h2 class="page-title">👥 {% trans "Manage Users" %}</h2>
 
 <!-- 🔍 Search and Filter Form -->
-<form method="get" class="filter-form">
-  <input type="text" name="search" placeholder="Search by username" value="{{ search_query }}">
-  <select name="role">
-    <option value="">All Roles</option>
-    <option value="admin" {% if role_filter == "admin" %}selected{% endif %}>Admin</option>
-    <option value="user" {% if role_filter == "user" %}selected{% endif %}>User</option>
+<form method="get" class="filter-form d-flex gap-2 mb-3" role="search">
+  <input type="text" name="search" placeholder="{% trans 'Search by username, email or name' %}" value="{{ search_query }}" class="form-control" />
+  <select name="role" class="form-select" aria-label="{% trans 'Role filter' %}">
+    <option value="">{% trans "All Roles" %}</option>
+    <option value="admin" {% if role_filter == "admin" %}selected{% endif %}>{% trans "Admin" %}</option>
+    <option value="user" {% if role_filter == "user" %}selected{% endif %}>{% trans "User" %}</option>
   </select>
-  <button type="submit" class="btn filter-btn">Filter</button>
-  <a href="{% url 'tasks:manage_users' %}" class="btn reset-btn">Reset</a>
+
+  <!-- Status filter (if your view provides status_filter / status_choices) -->
+  {% if status_choices %}
+    <select name="status" class="form-select" aria-label="{% trans 'Status filter' %}">
+      <option value="">{% trans "All statuses" %}</option>
+      {% for val,label in status_choices %}
+        <option value="{{ val }}" {% if status_filter == val %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  {% endif %}
+
+  <button type="submit" class="btn btn-primary">{% trans "Filter" %}</button>
+  <a href="{% url 'tasks:manage_users' %}" class="btn btn-secondary">{% trans "Reset" %}</a>
 </form>
 
 <!-- 🧑‍💻 Create New User Button -->
-<div class="actions-bar">
-  <a href="{% url 'tasks:create_user' %}" class="btn create-btn">+ Add New User</a>
-  <a href="{% url 'tasks:dashboard' %}" class="btn secondary-btn">← Back to Dashboard</a>
+<div class="actions-bar mb-3 d-flex gap-2">
+  <a href="{% url 'tasks:create_user' %}" class="btn btn-success">{% trans "+ Add New User" %}</a>
+  <a href="{% url 'tasks:dashboard' %}" class="btn btn-outline-secondary">← {% trans "Back to Dashboard" %}</a>
 </div>
 
 <!-- 📋 Users Table -->
-<table class="styled-table">
-  <thead>
+<table class="table table-hover table-bordered">
+  <thead class="table-light">
     <tr>
-      <th>ID</th>
-      <th>Username</th>
-      <th>Email</th>
-      <th>Role</th>
-      <th>Actions</th>
+      <th>{% trans "ID" %}</th>
+      <th>{% trans "Username" %}</th>
+      <th>{% trans "Email" %}</th>
+      <th>{% trans "Role" %}</th>
+      <th>{% trans "Status" %}</th>
+      <th class="text-end">{% trans "Actions" %}</th>
     </tr>
   </thead>
   <tbody>
@@ -41,20 +54,68 @@
         <td>{{ user.email }}</td>
         <td>
           {% if user.is_superuser %}
-            🛡️ Admin
+            🛡️ {% trans "Superuser" %}
           {% elif user.is_staff %}
-            👨‍💼 Staff
+            👨‍💼 {% trans "Admin" %}
           {% else %}
-            👤 Regular User
+            👤 {% trans "User" %}
           {% endif %}
         </td>
+
         <td>
-          <a href="{% url 'tasks:edit_user' user.id %}" class="btn edit-btn">Edit</a>
-          <a href="{% url 'tasks:delete_user' user.id %}" class="btn delete-btn">Delete</a>
+          {% if user.status == "active" %}
+            <span class="badge bg-success">{% trans "Active" %}</span>
+          {% elif user.status == "warned" %}
+            <span class="badge bg-warning text-dark">{% trans "Warned" %}</span>
+          {% elif user.status == "blocked" %}
+            <span class="badge bg-danger">{% trans "Blocked" %}</span>
+          {% else %}
+            <span class="badge bg-secondary">{{ user.status }}</span>
+          {% endif %}
+        </td>
+
+        <td class="text-end">
+          <!-- Edit / Delete (keep your existing routes if available) -->
+          <a href="{% url 'tasks:edit_user' user.id %}" class="btn btn-sm btn-outline-primary me-1">{% trans "Edit" %}</a>
+          <a href="{% url 'tasks:delete_user' user.id %}" class="btn btn-sm btn-outline-danger me-2">{% trans "Delete" %}</a>
+
+          {% if user.is_superuser %}
+            <span class="text-muted">{% trans "No actions" %}</span>
+          {% else %}
+            <!-- Warn -->
+            <form method="post" action="{% url 'tasks:manage_users' %}" style="display:inline;" class="d-inline-block me-1">
+              {% csrf_token %}
+              <input type="hidden" name="user_id" value="{{ user.id }}">
+              <input type="hidden" name="action" value="warn">
+              <input type="hidden" name="note" value="">
+              <button type="submit" class="btn btn-sm btn-warning">{% trans "Warn" %}</button>
+            </form>
+
+            <!-- Block -->
+            {% if request.user != user %}
+              <form method="post" action="{% url 'tasks:manage_users' %}" style="display:inline;" class="d-inline-block me-1" onsubmit="return confirm('{% trans "Are you sure you want to block this user?" %}');">
+                {% csrf_token %}
+                <input type="hidden" name="user_id" value="{{ user.id }}">
+                <input type="hidden" name="action" value="block">
+                <input type="hidden" name="note" value="">
+                <button type="submit" class="btn btn-sm btn-danger">{% trans "Block" %}</button>
+              </form>
+            {% endif %}
+
+            <!-- Activate -->
+            <form method="post" action="{% url 'tasks:manage_users' %}" style="display:inline;" class="d-inline-block">
+              {% csrf_token %}
+              <input type="hidden" name="user_id" value="{{ user.id }}">
+              <input type="hidden" name="action" value="activate">
+              <button type="submit" class="btn btn-sm btn-success">{% trans "Activate" %}</button>
+            </form>
+          {% endif %}
         </td>
       </tr>
     {% empty %}
-      <tr><td colspan="5">No users found.</td></tr>
+      <tr>
+        <td colspan="6" class="text-center">{% trans "No users found." %}</td>
+      </tr>
     {% endfor %}
   </tbody>
 </table>

@@ -7,7 +7,8 @@ from .views import signup_view, MyLoginView, my_logout_view, dashboard_view
 app_name = "tasks"
 
 urlpatterns = [
-    path("", MyLoginView.as_view(), name="login_redirect"),  # root → login
+    path("", views.landing_page, name="landing"),
+    # path("", MyLoginView.as_view(), name="login_redirect"),  # root → login
     path("signup/", signup_view, name="signup"),
     path("login/", MyLoginView.as_view(), name="login"),
     path("logout/", my_logout_view, name="logout"),
@@ -56,5 +57,7 @@ urlpatterns = [
 
     # AI service
     path("ai-summary/", views.ai_task_summary_view, name="ai_summary"),
+
+   
 
 ]

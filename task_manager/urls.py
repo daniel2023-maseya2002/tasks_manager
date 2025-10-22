@@ -29,6 +29,9 @@ urlpatterns = [
 
     # ✅ Django's default login redirect
     path("accounts/login/", MyLoginView.as_view(), name="login_redirect"),
+
+     # ✅ Add this line:
+    path('i18n/', include('django.conf.urls.i18n')),
 ]
 
 if settings.DEBUG:
