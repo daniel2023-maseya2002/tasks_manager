@@ -2,6 +2,7 @@ from django.urls import path
 from django.contrib import admin
 from . import views
 from .views import signup_view, MyLoginView, my_logout_view, dashboard_view
+from django.views.generic import TemplateView
 
 
 app_name = "tasks"
@@ -58,6 +59,7 @@ urlpatterns = [
     # AI service
     path("ai-summary/", views.ai_task_summary_view, name="ai_summary"),
 
+    path("misala-ai/", TemplateView.as_view(template_name="tasks/placeholder.html"), name="misala_ai"),
    
 
 ]
