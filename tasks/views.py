@@ -114,9 +114,10 @@ def dashboard_view(request):
     user = request.user
     today = timezone.now().date()
     tomorrow = today + timedelta(days=1)
+    next_week = today + timedelta(days=7)
 
-    # 🧭 Tasks: all for superuser, filtered for normal users
-    if user.is_superuser:
+    # 🧭 Tasks: all for superuser/admin, filtered for normal users
+    if user.is_superuser or getattr(user, 'role', '') == 'admin':
         tasks = Task.objects.all().order_by('-created_at')
     else:
         tasks = Task.objects.filter(Q(owner=user) | Q(assigned_to=user)).distinct().order_by('-created_at')
@@ -125,27 +126,59 @@ def dashboard_view(request):
     pending_count = tasks.filter(status="Pending").count()
     in_progress_count = tasks.filter(status="In Progress").count()
     completed_count = tasks.filter(status="Completed").count()
-
-    # ⏰ Upcoming tasks (due today or tomorrow, not completed)
+    
+    # Calculate percentages for the circular progress indicators
+    total_tasks = pending_count + in_progress_count + completed_count
+    if total_tasks > 0:
+        pending_percent = (pending_count / total_tasks) * 100
+        in_progress_percent = (in_progress_count / total_tasks) * 100
+        completed_percent = (completed_count / total_tasks) * 100
+    else:
+        pending_percent = in_progress_percent = completed_percent = 0
+    
+    # ⏰ Upcoming tasks (due within next 7 days, not completed)
     upcoming_tasks = tasks.filter(
-        due_date__lte=tomorrow,
+        due_date__lte=next_week,
         is_completed=False
-    )
+    ).order_by('due_date')[:5]  # Limit to 5, ordered by due date
 
     # 🔔 Latest 5 notifications for this user
     notifications = Notification.objects.filter(recipient=user).order_by('-created_at')[:5]
+    
+    # For admin dashboard: Get top users by completed tasks
+    top_users = None
+    if user.is_superuser or getattr(user, 'role', '') == 'admin':
+        top_users = (
+            CustomUser.objects.filter(role="user")
+            .annotate(
+                completed_count=Count("owned_tasks", filter=Q(owned_tasks__status="Completed") | Q(owned_tasks__is_completed=True)),
+                in_progress_count=Count("owned_tasks", filter=Q(owned_tasks__status="In Progress")),
+                pending_count=Count("owned_tasks", filter=Q(owned_tasks__status="Pending")),
+            )
+            .order_by("-completed_count")[:5]
+        )
+    
+    # Get total unread notifications count for the notification badge
+    unread_notifications_count = Notification.objects.filter(
+        recipient=user, is_read=False
+    ).count()
 
     context = {
         "tasks": tasks,
         "pending_count": pending_count,
         "in_progress_count": in_progress_count,
         "completed_count": completed_count,
+        "pending_percent": pending_percent,
+        "in_progress_percent": in_progress_percent,
+        "completed_percent": completed_percent,
         "upcoming_tasks": upcoming_tasks,
         "notifications": notifications,
+        "top_users": top_users,
+        "unread_notifications_count": unread_notifications_count,
+        "today": today,
     }
 
     return render(request, "tasks/dashboard.html", context)
-
 @login_required
 def task_list(request):
     # Start with all tasks

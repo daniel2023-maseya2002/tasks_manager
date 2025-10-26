@@ -1,0 +1,136 @@
+/* admin-dashboard.css
+   Compact, modern styling to match provided screenshot
+*/
+
+@import url('https://fonts.googleapis.com/css2?family=Zen+Dots&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+
+:root{
+  --muted:#8b8b8b;
+  --panel-bg: #fff;
+  --accent: #f0d6c0; /* light beige accent for highlight if needed */
+  --radius: 18px;
+}
+
+/* overall */
+.admin-dashboard-page {
+  font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  color: #222;
+  font-size: 14px; /* reduced size */
+}
+
+/* header */
+.page-header .page-title {
+  font-family: 'Zen Dots', sans-serif;
+  font-size: 30px; /* smaller than before but still large */
+  margin: 0 0 4px 0;
+}
+.page-header .subtitle {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+/* small header icons */
+.header-icons .icon-btn {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:8px;
+  padding:6px 10px;
+  border:1px solid #eee;
+  color:#444;
+  background: #fff;
+  position: relative;
+}
+.header-icons .badge-pill {
+  position:absolute;
+  top:-6px;
+  right:-6px;
+  background:#ff6b6b;
+  color:#fff;
+  border-radius:50%;
+  padding:3px 6px;
+  font-size:11px;
+}
+
+/* main rounded container */
+.panel-main {
+  background: #fff;
+  border-radius: var(--radius);
+  box-shadow: 0 10px 24px rgba(17,17,17,0.06);
+  overflow: hidden;
+}
+
+/* Active tasks card */
+.active-tasks-card {
+  background: #fafafa;
+  border-radius: 12px;
+  padding: 14px;
+}
+.active-tasks-card .card-head { display:flex; justify-content:space-between; align-items:center; }
+.active-tasks-card .card-title { margin:0; font-size:16px; font-weight:600; font-family:'Zen Dots', sans-serif; }
+.active-tasks-card .muted { color:var(--muted); font-size:12px; }
+
+/* small stat tiles */
+.task-stats { gap: 10px; }
+.small-card {
+  background: #fff;
+  border-radius: 10px;
+  padding: 12px 14px;
+  flex: 1;
+  border: 1px solid #eee;
+  min-width: 110px;
+}
+.small-card .stat-label { color: var(--muted); font-size:12px; }
+.small-card .stat-number { font-size:28px; font-weight:700; margin-top:6px; font-family:'Zen Dots', sans-serif; }
+.small-card .stat-sub { color:var(--muted); font-size:12px; margin-top:6px; }
+
+/* tiny color cues */
+.small-card.pending { border-color: #c9b6ff20; }
+.small-card.progress { border-color: #ffd6b020; }
+.small-card.done { border-color: #c9f0d020; }
+
+/* overview area */
+.overview-box, .middle-chart, .right-mini {
+  background:#fff;
+  border-radius:10px;
+  border:1px solid #f1f1f1;
+}
+.overview-head .h6-xs { font-size:13px; margin:0; font-weight:600; }
+.btn-add { background:transparent; border:none; color:#6b6b6b; font-size:13px; }
+
+/* donut + mini gauges */
+.donut-wrap { width:120px; height:120px; display:flex; align-items:center; justify-content:center; }
+.mini-gauges .gauge-title { width:100px; color:var(--muted); font-size:12px; }
+.mini-gauges .gauge-value { font-weight:600; font-size:15px; }
+
+/* lower chart */
+.lower-chart { background:#fff; margin-top:12px; border-radius:10px; padding:12px; border:1px solid #f1f1f1; }
+
+/* right side cards */
+.card-side { background:#fff; border-radius:12px; border:1px solid #f1f1f1; }
+.side-title { margin:0 0 8px 0; font-weight:700; font-size:15px; font-family:'Zen Dots', sans-serif; }
+.side-list .note-row { display:flex; gap:10px; padding:8px 0; border-bottom:1px solid #f3f3f3; align-items:flex-start; }
+.side-list .note-icon { width:36px; height:36px; border-radius:8px; background:#f6f6f6; display:flex; align-items:center; justify-content:center; }
+.note-title { font-weight:600; font-size:13px; }
+.note-text { font-size:12px; color:var(--muted); }
+
+/* deadlines list */
+.deadline-list { list-style:none; padding:0; margin:0; }
+.deadline-list li { display:flex; gap:10px; padding:10px 0; border-bottom:1px solid #f6f6f6; align-items:center; }
+.dl-icon { color:#ffb657; font-size:20px; }
+.dl-title { font-weight:600; font-size:14px; }
+.dl-date { font-size:12px; color:var(--muted); }
+
+/* responsive tweaks */
+@media (max-width: 991px) {
+  .page-header .page-title { font-size: 24px; }
+  .task-stats { flex-direction: column; }
+  .chart-section { grid-template-columns: 1fr; }
+  .col-lg-8, .col-lg-4 { width:100%; max-width:100%; }
+}
+
+/* small helpers */
+.small-muted { color:var(--muted); font-size:12px; }
+.rounded-xl { border-radius: 20px; }

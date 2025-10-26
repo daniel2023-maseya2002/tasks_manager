@@ -1,313 +1,1183 @@
-{% extends "tasks/base.html" %}
-{% block title %}Dashboard - TaskManager{% endblock %}
+{% extends 'tasks/base.html' %}
+{% load static %}
 {% load i18n %}
 
 {% block content %}
-<div class="container py-4">
-
-  <!-- 🏠 Header -->
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-      <h2 class="fw-bold mb-1 text-primary">Dashboard</h2>
-      <p class="text-muted">
-        Welcome back, 
-        <strong>{{ request.user.get_full_name|default:request.user.username }}</strong>!
-      </p>
+<!-- Ultra-Modern Dashboard Content -->
+<div class="container-fluid px-3 py-2">
+  <!-- First Row: Tasks Overview with ultra-modern cards -->
+  <div class="card border-0 shadow-sm rounded-4 mb-3 overflow-hidden">
+    <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center py-2">
+      <div>
+        <h6 class="fw-semibold mb-0 d-flex align-items-center">
+          <i class="bi bi-grid-3x3-gap-fill me-2 text-primary fs-xs"></i>
+          {% if user.is_superuser or user.role == 'admin' %}Active Tasks{% else %}Your Tasks{% endif %}
+        </h6>
+        <small class="text-muted fs-xs">Recent overview</small>
+      </div>
+      <button class="btn btn-outline-secondary btn-sm rounded-pill px-2 py-1 d-flex align-items-center fs-xs">
+        <i class="bi bi-arrow-repeat me-1 fs-xs"></i> <span>Static</span>
+      </button>
     </div>
-
-    <div class="d-flex gap-2">
-      <!-- 🔔 Notifications Button -->
-      <a href="{% url 'tasks:notification_view' %}" class="btn btn-outline-info position-relative">
-        <i class="bi bi-bell"></i> Notifications
-        {% if unread_count > 0 %}
-          <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-            {{ unread_count }}
-          </span>
-        {% endif %}
-      </a>
-
-      {% if request.user.is_superuser %}
-        <a href="{% url 'tasks:task_create' %}" class="btn btn-success">
-          <i class="bi bi-plus-circle"></i> New Task
-        </a>
-        <a href="{% url 'tasks:manage_users' %}" class="btn btn-outline-primary">
-          <i class="bi bi-people"></i> Manage Users
-        </a>
-      {% endif %}
-    </div>
-  </div>
-
-  <!-- 🤖 AI Summary Integration -->
-  <div class="mb-3">
-    <button id="ai-summary-btn" class="btn btn-outline-primary">
-      <i class="bi bi-brain"></i> Generate AI Summary
-    </button>
-    <span id="ai-spinner" class="ms-2" style="display:none;">Loading…</span>
-  </div>
-
-  <div id="ai-summary-result" class="card mt-3 shadow-sm" style="display:none;">
-    <div class="card-body">
-      <h5 class="card-title"><i class="bi bi-stars"></i> AI Summary</h5>
-      <div id="ai-summary-text" class="text-secondary"></div>
-    </div>
-  </div>
-
-  <!-- ⚠️ Upcoming Deadlines -->
-  {% if upcoming_tasks %}
-    <div class="accordion mb-4 shadow-sm" id="upcomingTasksAccordion">
-      <div class="accordion-item border-warning">
-        <h2 class="accordion-header" id="headingUpcoming">
-          <button class="accordion-button bg-warning-subtle fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseUpcoming" aria-expanded="true" aria-controls="collapseUpcoming">
-            <i class="bi bi-exclamation-triangle-fill me-2 text-warning"></i> Upcoming Deadlines ({{ upcoming_tasks|length }})
-          </button>
-        </h2>
-        <div id="collapseUpcoming" class="accordion-collapse collapse show" aria-labelledby="headingUpcoming" data-bs-parent="#upcomingTasksAccordion">
-          <div class="accordion-body">
-            <ul class="list-group">
-              {% for task in upcoming_tasks %}
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                  <div>
-                    <strong>{{ task.title }}</strong><br>
-                    <small>Due: <span class="text-danger fw-semibold">{{ task.due_date|date:"M d, Y" }}</span></small>
-                  </div>
-                  {% if not task.is_completed %}
-                    <a href="{% url 'tasks:task_detail' task.id %}" class="btn btn-sm btn-outline-primary">View</a>
-                  {% endif %}
-                </li>
-              {% endfor %}
-            </ul>
+    <div class="card-body pt-0 pb-3">
+      <div class="row g-3">
+        <!-- Pending Tasks Ultra-Modern Card -->
+        <div class="col-md-4">
+          <div class="ultra-card pending-card">
+            <div class="card-body position-relative overflow-hidden p-3">
+              <div class="card-bg-icon">
+                <i class="bi bi-hourglass-split"></i>
+              </div>
+              <h6 class="text-uppercase text-muted fs-xs mb-1 fw-semibold">Total Tasks</h6>
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <h2 class="fw-bold mb-0 text-gradient-primary">{{ pending_count }}</h2>
+                <div class="status-icon pending-icon">
+                  <i class="bi bi-clock-history fs-xs"></i>
+                </div>
+              </div>
+              <p class="mb-0 fw-medium text-uppercase fs-xs">Pending</p>
+              <div class="progress mt-2" style="height: 3px;">
+                <div class="progress-bar bg-primary" role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- In Progress Tasks Ultra-Modern Card -->
+        <div class="col-md-4">
+          <div class="ultra-card progress-card">
+            <div class="card-body position-relative overflow-hidden p-3">
+              <div class="card-bg-icon">
+                <i class="bi bi-arrow-repeat"></i>
+              </div>
+              <h6 class="text-uppercase text-muted fs-xs mb-1 fw-semibold">Total Tasks</h6>
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <h2 class="fw-bold mb-0 text-gradient-warning">{{ in_progress_count }}</h2>
+                <div class="status-icon progress-icon">
+                  <i class="bi bi-arrow-clockwise fs-xs"></i>
+                </div>
+              </div>
+              <p class="mb-0 fw-medium text-uppercase fs-xs">In Progress</p>
+              <div class="progress mt-2" style="height: 3px;">
+                <div class="progress-bar bg-warning" role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Completed Tasks Ultra-Modern Card -->
+        <div class="col-md-4">
+          <div class="ultra-card completed-card">
+            <div class="card-body position-relative overflow-hidden p-3">
+              <div class="card-bg-icon">
+                <i class="bi bi-check-circle"></i>
+              </div>
+              <h6 class="text-uppercase text-muted fs-xs mb-1 fw-semibold">Total Tasks</h6>
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <h2 class="fw-bold mb-0 text-gradient-success">{{ completed_count }}</h2>
+                <div class="status-icon completed-icon">
+                  <i class="bi bi-check-lg fs-xs"></i>
+                </div>
+              </div>
+              <p class="mb-0 fw-medium text-uppercase fs-xs">Completed</p>
+              <div class="progress mt-2" style="height: 3px;">
+                <div class="progress-bar bg-success" role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
     </div>
-  {% else %}
-    <div class="alert alert-success shadow-sm">
-      <i class="bi bi-check-circle-fill me-2"></i> No upcoming tasks. You’re all set!
-    </div>
-  {% endif %}
-
-  <!-- 🔔 Latest Notifications -->
-  <div class="card mb-4 shadow-sm">
-    <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
-      <h5 class="mb-0">
-        <i class="bi bi-bell-fill me-2"></i>Latest Notifications
-        {% if unread_count > 0 %}
-          <span class="badge bg-warning text-dark ms-2">{{ unread_count }} Unread</span>
-        {% endif %}
-      </h5>
-      {% if unread_count > 0 %}
-        <a href="{% url 'tasks:mark_all_notifications_read' %}" class="btn btn-sm btn-light">
-          <i class="bi bi-check2-all"></i> Mark All as Read
-        </a>
-      {% endif %}
-    </div>
-    <div class="card-body">
-      {% if notifications %}
-        <ul class="list-group list-group-flush">
-          {% for note in notifications %}
-            <li class="list-group-item d-flex justify-content-between align-items-center {% if not note.is_read %}bg-light{% endif %}">
-              <div>
-                {{ note.message }}
-                {% if not note.is_read %}
-                  <span class="badge bg-warning ms-2">New</span>
-                {% endif %}
-                <br>
-                <small class="text-muted">{{ note.created_at|date:"M d, H:i" }}</small>
-              </div>
-              {% if not note.is_read %}
-                <a href="{% url 'tasks:mark_notification_read' note.id %}" class="btn btn-sm btn-outline-success ms-2">
-                  Mark as Read
-                </a>
-              {% endif %}
-            </li>
-          {% endfor %}
-        </ul>
-      {% else %}
-        <p class="text-muted mb-0">No notifications yet.</p>
-      {% endif %}
-    </div>
   </div>
 
-  <!-- 📊 Task Summary -->
-  <div class="row mb-4">
-    <div class="col-md-4 mb-3">
-      <div class="card bg-warning text-dark text-center shadow-sm">
-        <div class="card-body">
-          <h5>Pending</h5>
-          <p class="display-6">{{ pending_count }}</p>
+  <!-- Second Row: Assigned Tasks Table & Notifications -->
+  <div class="row g-3">
+    <div class="col-lg-8">
+      <!-- Assigned Tasks with ultra-modern design -->
+      <div class="card border-0 shadow-sm rounded-4 mb-3 overflow-hidden">
+        <div class="card-header gradient-blue text-white d-flex justify-content-between align-items-center py-2 px-3">
+          <h6 class="fw-semibold mb-0 d-flex align-items-center">
+            <i class="bi bi-list-task me-2 fs-xs"></i>
+            Your Assigned Tasks
+          </h6>
+          <a href="{% url 'tasks:task_list' %}" class="btn btn-light btn-sm rounded-pill px-2 py-0 fs-xs">
+            <i class="bi bi-eye fs-xs"></i> View All
+          </a>
         </div>
-      </div>
-    </div>
-    <div class="col-md-4 mb-3">
-      <div class="card bg-primary text-white text-center shadow-sm">
-        <div class="card-body">
-          <h5>In Progress</h5>
-          <p class="display-6">{{ in_progress_count }}</p>
-        </div>
-      </div>
-    </div>
-    <div class="col-md-4 mb-3">
-      <div class="card bg-success text-white text-center shadow-sm">
-        <div class="card-body">
-          <h5>Completed</h5>
-          <p class="display-6">{{ completed_count }}</p>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- 👥 User List -->
-  {% if request.user.is_superuser and users %}
-    <div class="card shadow-sm mb-4">
-      <div class="card-header bg-dark text-white">
-        <h5 class="mb-0"><i class="bi bi-people-fill me-2"></i>All Users</h5>
-      </div>
-      <div class="card-body p-0">
-        <table class="table table-hover mb-0 align-middle">
-          <thead class="table-light">
-            <tr>
-              <th>Username</th>
-              <th>Email</th>
-              <th>Is Staff</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for user in users %}
-              <tr>
-                <td>{{ user.username }}</td>
-                <td>{{ user.email }}</td>
-                <td>
-                  {% if user.is_staff %}
-                    <span class="badge bg-success">Yes</span>
-                  {% else %}
-                    <span class="badge bg-secondary">No</span>
-                  {% endif %}
-                </td>
-              </tr>
-            {% empty %}
-              <tr><td colspan="3" class="text-center text-muted py-3">No users found.</td></tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  {% endif %}
-
-  <!-- 📋 Tasks Table -->
-  <div class="card shadow-sm">
-    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-      <h5 class="mb-0">
-        {% if request.user.is_superuser %}📋 All Tasks{% else %}🧾 Your Assigned Tasks{% endif %}
-      </h5>
-    </div>
-    <div class="card-body p-0">
-      <table class="table table-striped align-middle mb-0">
-        <thead class="table-light">
-          <tr>
-            <th>Title</th>
-            <th>Description</th>
-            <th>Assigned To</th>
-            <th>Status</th>
-            {% if request.user.is_superuser %}
-              <th>Actions</th>
-            {% endif %}
-          </tr>
-        </thead>
-        <tbody>
-          {% for task in tasks %}
-            <tr>
-              <td>{{ task.title }}</td>
-              <td>{{ task.description|truncatewords:10 }}</td>
-              <td>{{ task.assigned_to.username|default:"Unassigned" }}</td>
-              <td>
-                {% if task.status == "Completed" %}
-                  <span class="badge bg-success">{{ task.status }}</span>
-                {% elif task.status == "In Progress" %}
-                  <span class="badge bg-info text-dark">{{ task.status }}</span>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table ultra-table mb-0">
+              <thead>
+                <tr>
+                  <th class="border-0 py-2 px-3 fs-xs">Title</th>
+                  <th class="border-0 py-2 px-3 fs-xs">Description</th>
+                  <th class="border-0 py-2 px-3 fs-xs">Assigned to</th>
+                  <th class="border-0 py-2 px-3 text-center fs-xs">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% if tasks %}
+                  {% for task in tasks|slice:":3" %}
+                    <tr data-task-id="{{ task.id }}" onclick="window.location='{% url 'tasks:task_detail' task.id %}';" style="cursor:pointer;">
+                      <td class="align-middle py-2 px-3">
+                        <div class="d-flex align-items-center">
+                          <i class="bi bi-file-earmark-text me-2 text-primary fs-xs"></i>
+                          <span class="fw-medium fs-xs">{{ task.title }}</span>
+                        </div>
+                      </td>
+                      <td class="align-middle py-2 px-3 fs-xs">{{ task.description|truncatechars:30|default:"No description" }}</td>
+                      <td class="align-middle py-2 px-3 fs-xs">
+                        {% if task.assigned_to %}
+                          <div class="d-flex align-items-center">
+                            <div class="avatar-xs me-2">{{ task.assigned_to.username|slice:":1"|upper }}</div>
+                            <span>{{ task.assigned_to.username }}</span>
+                          </div>
+                        {% else %}
+                          <span class="text-muted">Not assigned</span>
+                        {% endif %}
+                      </td>
+                      <td class="align-middle text-center py-2 px-3">
+                        {% if task.status == "Pending" %}
+                          <span class="status-pill status-pending">
+                            <i class="bi bi-circle-fill me-1 fs-xxs"></i> <span class="fs-xs">Pending</span>
+                          </span>
+                        {% elif task.status == "In Progress" %}
+                          <span class="status-pill status-progress">
+                            <i class="bi bi-circle-fill me-1 fs-xxs"></i> <span class="fs-xs">In Progress</span>
+                          </span>
+                        {% else %}
+                          <span class="status-pill status-completed">
+                            <i class="bi bi-circle-fill me-1 fs-xxs"></i> <span class="fs-xs">Completed</span>
+                          </span>
+                        {% endif %}
+                      </td>
+                    </tr>
+                  {% endfor %}
                 {% else %}
-                  <span class="badge bg-warning text-dark">{{ task.status }}</span>
+                  <tr>
+                    <td colspan="4" class="text-center py-4">
+                      <div class="empty-state py-3">
+                        <i class="bi bi-clipboard-x fs-3 text-muted"></i>
+                        <p class="mt-2 mb-0 fs-xs">No tasks found</p>
+                      </div>
+                    </td>
+                  </tr>
                 {% endif %}
-              </td>
-              {% if request.user.is_superuser %}
-                <td>
-                  <a href="{% url 'tasks:task_update' task.id %}" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil-square"></i></a>
-                  <a href="{% url 'tasks:task_delete' task.id %}" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></a>
-                </td>
-              {% endif %}
-            </tr>
-          {% empty %}
-            <tr><td colspan="5" class="text-center text-muted py-3">No tasks available.</td></tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-  </div>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
 
-  <div class="text-end mt-4">
-    <a href="{% url 'tasks:task_list' %}" class="btn btn-outline-secondary">
-      <i class="bi bi-arrow-left"></i> View All Tasks
-    </a>
+      <!-- Weekly Performance Chart with ultra-modern design -->
+      {% if not user.is_superuser and user.role != 'admin' %}
+      <div class="card border-0 shadow-sm rounded-4 mb-3 overflow-hidden">
+        <div class="card-header bg-white border-bottom-0 pt-2 pb-0 px-3">
+          <h6 class="fw-semibold mb-0 d-flex align-items-center">
+            <i class="bi bi-graph-up me-2 text-primary fs-xs"></i>
+            Weekly Performance
+          </h6>
+          <small class="text-muted fs-xs">Time spent in the system</small>
+        </div>
+        <div class="card-body pt-1 pb-2 px-3">
+          <div class="chart-container position-relative" style="height:180px;">
+            <canvas id="weeklyPerformanceChart"></canvas>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+      
+      <!-- Admin Only: Additional Charts with ultra-modern design -->
+      {% if user.is_superuser or user.role == 'admin' %}
+      <div class="row g-3">
+        <div class="col-12">
+          <div class="card border-0 shadow-sm rounded-4 mb-3 overflow-hidden">
+            <div class="card-header bg-white border-bottom-0 d-flex justify-content-between align-items-center py-2 px-3">
+              <div>
+                <h6 class="fw-semibold mb-0 d-flex align-items-center">
+                  <i class="bi bi-pie-chart-fill me-2 text-primary fs-xs"></i>
+                  Task Overview
+                </h6>
+                <small class="text-muted fs-xs">Distribution by status</small>
+              </div>
+              <button class="btn btn-primary btn-sm rounded-pill px-2 py-1 d-flex align-items-center fs-xs" 
+                     onclick="location.href='{% url 'tasks:task_create' %}';">
+                <i class="bi bi-plus fs-xs me-1"></i> Add Task
+              </button>
+            </div>
+            <div class="card-body px-3 py-2">
+              <div class="row text-center g-3">
+                <div class="col-md-4">
+                  <div class="ultra-progress-circle mx-auto" data-percentage="{{ pending_percent|floatformat:0 }}">
+                    <svg class="ultra-progress-svg" viewBox="0 0 100 100">
+                      <circle class="ultra-progress-bg" cx="50" cy="50" r="40"></circle>
+                      <circle class="ultra-progress-bar ultra-progress-pending" cx="50" cy="50" r="40"></circle>
+                    </svg>
+                    <div class="ultra-progress-text">{{ pending_percent|floatformat:0 }}%</div>
+                  </div>
+                  <p class="mt-1 mb-0 fw-medium fs-xs">Pending</p>
+                </div>
+                <div class="col-md-4">
+                  <div class="ultra-progress-circle mx-auto" data-percentage="{{ in_progress_percent|floatformat:0 }}">
+                    <svg class="ultra-progress-svg" viewBox="0 0 100 100">
+                      <circle class="ultra-progress-bg" cx="50" cy="50" r="40"></circle>
+                      <circle class="ultra-progress-bar ultra-progress-inprogress" cx="50" cy="50" r="40"></circle>
+                    </svg>
+                    <div class="ultra-progress-text">{{ in_progress_percent|floatformat:0 }}%</div>
+                  </div>
+                  <p class="mt-1 mb-0 fw-medium fs-xs">In Progress</p>
+                </div>
+                <div class="col-md-4">
+                  <div class="ultra-progress-circle mx-auto" data-percentage="{{ completed_percent|floatformat:0 }}">
+                    <svg class="ultra-progress-svg" viewBox="0 0 100 100">
+                      <circle class="ultra-progress-bg" cx="50" cy="50" r="40"></circle>
+                      <circle class="ultra-progress-bar ultra-progress-completed" cx="50" cy="50" r="40"></circle>
+                    </svg>
+                    <div class="ultra-progress-text">{{ completed_percent|floatformat:0 }}%</div>
+                  </div>
+                  <p class="mt-1 mb-0 fw-medium fs-xs">Completed</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Monthly Task Chart for Admins with ultra-modern design -->
+      <div class="card border-0 shadow-sm rounded-4 mb-3 overflow-hidden">
+        <div class="card-header bg-white border-bottom-0 pt-2 pb-0 px-3">
+          <div class="d-flex justify-content-between align-items-start">
+            <div>
+              <h6 class="fw-semibold mb-0 d-flex align-items-center">
+                <i class="bi bi-calendar3 me-2 text-primary fs-xs"></i>
+                Monthly Tasks
+              </h6>
+              <small class="text-muted fs-xs">Task progression over the month</small>
+            </div>
+            <div class="mt-0">
+              <select class="form-select form-select-sm fs-xs py-1" id="monthSelect" aria-label="Month select" style="font-size: 11px; height: auto; padding-top: 2px; padding-bottom: 2px;">
+                <option value="11" selected>November</option>
+                <option value="10">October</option>
+                <option value="9">September</option>
+                <option value="8">August</option>
+                <option value="7">July</option>
+                <option value="6">June</option>
+                <option value="5">May</option>
+                <option value="4">April</option>
+                <option value="3">March</option>
+                <option value="2">February</option>
+                <option value="1">January</option>
+                <option value="12">December</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="card-body pt-1 px-3 pb-2">
+          <div class="chart-container position-relative" style="height:180px;">
+            <canvas id="monthlyTaskChart"></canvas>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Top 5 Users Chart for Admins with ultra-modern design -->
+      {% if top_users %}
+      <div class="card border-0 shadow-sm rounded-4 mb-3 overflow-hidden">
+        <div class="card-header bg-white border-bottom-0 pt-2 pb-0 px-3">
+          <h6 class="fw-semibold mb-0 d-flex align-items-center">
+            <i class="bi bi-trophy me-2 text-primary fs-xs"></i>
+            Top 5 Users by Completed Tasks
+          </h6>
+          <small class="text-muted fs-xs">Best performers this month</small>
+        </div>
+        <div class="card-body pt-1 px-3 pb-2">
+          <div class="chart-container position-relative" style="height:180px;">
+            <canvas id="topUsersChart"></canvas>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+      {% endif %}
+    </div>
+
+    <!-- Notifications and Deadlines Column with ultra-modern design -->
+    <div class="col-lg-4">
+      <!-- Latest Notifications -->
+      <div class="card border-0 shadow-sm rounded-4 mb-3 overflow-hidden">
+        <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center py-2 px-3">
+          <h6 class="fw-semibold mb-0 d-flex align-items-center">
+            <i class="bi bi-bell me-2 text-primary fs-xs"></i>
+            Latest Notifications
+          </h6>
+          <a href="{% url 'tasks:notification_view' %}" class="text-muted fs-xs text-decoration-none">
+            View all <i class="bi bi-chevron-right fs-xs"></i>
+          </a>
+        </div>
+        <div class="card-body p-0">
+          <div class="ultra-notification-list">
+            {% if notifications %}
+              {% for notification in notifications %}
+                <div class="ultra-notification-item {% if notification.is_read %}read{% else %}unread{% endif %}">
+                  <div class="d-flex">
+                    {% if "Reminder" in notification.message %}
+                      <div class="ultra-notification-icon reminder-icon">
+                        <i class="bi bi-alarm fs-xs"></i>
+                      </div>
+                    {% elif "assigned" in notification.message|lower %}
+                      <div class="ultra-notification-icon new-task-icon">
+                        <i class="bi bi-clipboard-plus fs-xs"></i>
+                      </div>
+                    {% elif "comment" in notification.message|lower %}
+                      <div class="ultra-notification-icon comment-icon">
+                        <i class="bi bi-chat-left-text fs-xs"></i>
+                      </div>
+                    {% else %}
+                      <div class="ultra-notification-icon default-icon">
+                        <i class="bi bi-bell fs-xs"></i>
+                      </div>
+                    {% endif %}
+                    
+                    <div class="ultra-notification-content">
+                      {% if "Reminder" in notification.message %}
+                        <h6 class="ultra-notification-title fs-xs">Reminder</h6>
+                      {% elif "assigned" in notification.message|lower %}
+                        <h6 class="ultra-notification-title fs-xs">New Task</h6>
+                      {% elif "comment" in notification.message|lower %}
+                        <h6 class="ultra-notification-title fs-xs">Comment</h6>
+                      {% else %}
+                        <h6 class="ultra-notification-title fs-xs">Notification</h6>
+                      {% endif %}
+                      <p class="ultra-notification-text fs-xs">{{ notification.message }}</p>
+                      <p class="ultra-notification-time fs-xxs">{{ notification.created_at|timesince }} ago</p>
+                    </div>
+                  </div>
+                </div>
+              {% endfor %}
+            {% else %}
+              <div class="empty-state p-3 text-center">
+                <i class="bi bi-bell-slash fs-4 text-muted"></i>
+                <p class="mt-1 mb-0 fs-xs">No notifications found</p>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Upcoming Deadlines with ultra-modern design -->
+      <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+        <div class="card-header bg-white border-0 py-2 px-3">
+          <h6 class="fw-semibold mb-0 d-flex align-items-center">
+            <i class="bi bi-calendar-event me-2 text-primary fs-xs"></i>
+            Upcoming Deadlines <span class="badge bg-danger ms-2 rounded-pill fs-xxs px-2 py-1">{{ upcoming_tasks|length }}</span>
+          </h6>
+        </div>
+        <div class="card-body p-0">
+          <div class="ultra-deadline-list">
+            {% if upcoming_tasks %}
+              {% for task in upcoming_tasks %}
+                <div class="ultra-deadline-item" onclick="window.location='{% url 'tasks:task_detail' task.id %}';" style="cursor:pointer;">
+                  <div class="d-flex">
+                    <div class="ultra-deadline-icon">
+                      <i class="bi bi-exclamation-triangle fs-xs"></i>
+                    </div>
+                    <div class="ultra-deadline-content">
+                      <h6 class="ultra-deadline-title fs-xs">{{ task.title }}</h6>
+                      <p class="ultra-deadline-desc fs-xs">{{ task.description|truncatechars:40|default:"No description" }}</p>
+                      <div class="d-flex align-items-center">
+                        <i class="bi bi-clock fs-xxs me-1 text-danger"></i>
+                        <p class="ultra-deadline-date fs-xxs mb-0">Due: {{ task.due_date|date:"M d, Y" }}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              {% endfor %}
+            {% else %}
+              <div class="empty-state p-3 text-center">
+                <i class="bi bi-calendar-check fs-4 text-muted"></i>
+                <p class="mt-1 mb-0 fs-xs">No upcoming deadlines</p>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
-<!-- 🧠 AI Summary Script -->
+<!-- Ultra-Modern Dashboard Styles -->
+<style>
+  /* Font size classes */
+  .fs-xs { font-size: 0.75rem !important; }
+  .fs-xxs { font-size: 0.65rem !important; }
+  
+  /* Ultra-Modern Card Styles */
+  .ultra-card {
+    border-radius: 10px;
+    border: none;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+    transition: all 0.3s ease;
+    height: 100%;
+    overflow: hidden;
+    position: relative;
+    background: white;
+  }
+  
+  .ultra-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.07);
+  }
+  
+  .card-bg-icon {
+    position: absolute;
+    right: -15px;
+    bottom: -15px;
+    font-size: 4rem;
+    opacity: 0.05;
+    z-index: 0;
+  }
+  
+  .status-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    color: white;
+  }
+  
+  .pending-icon {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    box-shadow: 0 3px 8px rgba(99, 102, 241, 0.2);
+  }
+  
+  .progress-icon {
+    background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%);
+    box-shadow: 0 3px 8px rgba(245, 158, 11, 0.2);
+  }
+  
+  .completed-icon {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    box-shadow: 0 3px 8px rgba(16, 185, 129, 0.2);
+  }
+  
+  .text-gradient-primary {
+    background: linear-gradient(to right, #6366f1, #8b5cf6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  
+  .text-gradient-warning {
+    background: linear-gradient(to right, #f59e0b, #f97316);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  
+  .text-gradient-success {
+    background: linear-gradient(to right, #10b981, #059669);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  
+  /* Ultra-Modern Table Styles */
+  .ultra-table {
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+  
+  .ultra-table thead th {
+    font-weight: 600;
+    font-size: 0.75rem;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    background-color: #f8fafc;
+  }
+  
+  .ultra-table tbody tr {
+    transition: all 0.2s ease;
+  }
+  
+  .ultra-table tbody tr:hover {
+    background-color: #f8fafc;
+  }
+  
+  .ultra-table td {
+    border-top: 1px solid #f3f4f6;
+  }
+  
+  .avatar-xs {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.65rem;
+    font-weight: 600;
+  }
+  
+  .status-pill {
+    padding: 4px 8px;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+  }
+  
+  .status-pending {
+    background-color: rgba(99, 102, 241, 0.1);
+    color: #6366f1;
+  }
+  
+  .status-progress {
+    background-color: rgba(245, 158, 11, 0.1);
+    color: #f59e0b;
+  }
+  
+  .status-completed {
+    background-color: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+  }
+  
+  /* Ultra-Modern Progress Circle */
+  .ultra-progress-circle {
+    position: relative;
+    width: 90px;
+    height: 90px;
+  }
+  
+  .ultra-progress-svg {
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+  }
+  
+  .ultra-progress-bg {
+    fill: none;
+    stroke: #f3f4f6;
+    stroke-width: 6;
+  }
+  
+  .ultra-progress-bar {
+    fill: none;
+    stroke-width: 6;
+    stroke-linecap: round;
+    stroke-dasharray: 251.2;
+    stroke-dashoffset: 251.2;
+    transition: stroke-dashoffset 1s ease;
+  }
+  
+  .ultra-progress-pending {
+    stroke: #6366f1;
+  }
+  
+  .ultra-progress-inprogress {
+    stroke: #f59e0b;
+  }
+  
+  .ultra-progress-completed {
+    stroke: #10b981;
+  }
+  
+  .ultra-progress-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 1rem;
+    font-weight: bold;
+    color: #1f2937;
+  }
+  
+  /* Ultra-Modern Notification Styles */
+  .ultra-notification-list {
+    max-height: 300px;
+    overflow-y: auto;
+  }
+  
+  .ultra-notification-item {
+    padding: 0.75rem;
+    border-bottom: 1px solid #f3f4f6;
+    transition: all 0.2s ease;
+  }
+  
+  .ultra-notification-item:hover {
+    background-color: #f8fafc;
+  }
+  
+  .ultra-notification-item.unread {
+    border-left: 2px solid #6366f1;
+  }
+  
+  .ultra-notification-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 0.75rem;
+    flex-shrink: 0;
+  }
+  
+  .reminder-icon {
+    background-color: rgba(245, 158, 11, 0.1);
+    color: #f59e0b;
+  }
+  
+  .new-task-icon {
+    background-color: rgba(99, 102, 241, 0.1);
+    color: #6366f1;
+  }
+  
+  .comment-icon {
+    background-color: rgba(168, 85, 247, 0.1);
+    color: #a855f7;
+  }
+  
+  .default-icon {
+    background-color: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+  }
+  
+  .ultra-notification-content {
+    flex: 1;
+  }
+  
+  .ultra-notification-title {
+    margin: 0 0 2px;
+    font-weight: 600;
+  }
+  
+  .ultra-notification-text {
+    margin: 0;
+    color: #6b7280;
+    line-height: 1.3;
+  }
+  
+  .ultra-notification-time {
+    margin: 2px 0 0;
+    color: #9ca3af;
+  }
+  
+  /* Ultra-Modern Deadline Styles */
+  .ultra-deadline-list {
+    max-height: 300px;
+    overflow-y: auto;
+  }
+  
+  .ultra-deadline-item {
+    padding: 0.75rem;
+    border-bottom: 1px solid #f3f4f6;
+    transition: all 0.2s ease;
+  }
+  
+  .ultra-deadline-item:hover {
+    background-color: #f8fafc;
+  }
+  
+  .ultra-deadline-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 0.75rem;
+    background-color: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+    flex-shrink: 0;
+    animation: pulse 2s infinite;
+  }
+  
+  .ultra-deadline-content {
+    flex: 1;
+  }
+  
+  .ultra-deadline-title {
+    margin: 0 0 2px;
+    font-weight: 600;
+  }
+  
+  .ultra-deadline-desc {
+    margin: 0 0 4px;
+    color: #6b7280;
+    line-height: 1.3;
+  }
+  
+  .ultra-deadline-date {
+    color: #ef4444;
+    font-weight: 500;
+  }
+  
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #9ca3af;
+  }
+  
+  /* Additional Design Elements */
+  .gradient-blue {
+    background: linear-gradient(135deg, #2563eb, #4f46e5);
+  }
+  
+  .rounded-4 {
+    border-radius: 0.5rem !important;
+  }
+  
+  @keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+  }
+  
+  /* Scrollbar Styling */
+  .ultra-notification-list::-webkit-scrollbar,
+  .ultra-deadline-list::-webkit-scrollbar {
+    width: 4px;
+  }
+  
+  .ultra-notification-list::-webkit-scrollbar-track,
+  .ultra-deadline-list::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 10px;
+  }
+  
+  .ultra-notification-list::-webkit-scrollbar-thumb,
+  .ultra-deadline-list::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 10px;
+  }
+  
+  .ultra-notification-list::-webkit-scrollbar-thumb:hover,
+  .ultra-deadline-list::-webkit-scrollbar-thumb:hover {
+    background: #9ca3af;
+  }
+  
+  /* Ultra compact spacing */
+  .card-header {
+    padding: 0.75rem 1rem;
+  }
+  
+  .row.g-3 {
+    --bs-gutter-x: 0.75rem;
+    --bs-gutter-y: 0.75rem;
+  }
+  
+  /* Responsive adjustments */
+  @media (max-width: 992px) {
+    .ultra-progress-circle {
+      width: 75px;
+      height: 75px;
+    }
+    
+    .ultra-progress-text {
+      font-size: 0.9rem;
+    }
+  }
+  
+  @media (max-width: 768px) {
+    .status-icon {
+      width: 30px;
+      height: 30px;
+    }
+  }
+</style>
+
+<!-- Ultra-Modern Dashboard JavaScript -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-function getCookie(name) {
-  let cookieValue = null;
-  if (document.cookie && document.cookie !== '') {
-      const cookies = document.cookie.split(';');
-      for (let cookie of cookies) {
-          cookie = cookie.trim();
-          if (cookie.startsWith(name + '=')) {
-              cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-              break;
-          }
-      }
-  }
-  return cookieValue;
-}
-const csrftoken = getCookie('csrftoken');
-
-document.getElementById('ai-summary-btn').addEventListener('click', async function () {
-  const btn = this;
-  const spinner = document.getElementById('ai-spinner');
-  const resultCard = document.getElementById('ai-summary-result');
-  const resultText = document.getElementById('ai-summary-text');
-
-  btn.disabled = true;
-  spinner.style.display = 'inline';
-  resultCard.style.display = 'none';
-  resultText.textContent = '';
-
-  try {
-    const resp = await fetch("{% url 'tasks:ai_summary' %}", {
-      method: 'POST',
-      headers: {
-        'X-CSRFToken': csrftoken,
-        'Accept': 'application/json',
+document.addEventListener('DOMContentLoaded', function() {
+  // Set up progress circles
+  document.querySelectorAll('.ultra-progress-circle').forEach(function(circle) {
+    const percentage = parseInt(circle.getAttribute('data-percentage')) || 0;
+    const circumference = 2 * Math.PI * 40;
+    const offset = circumference - (percentage / 100 * circumference);
+    
+    const progressBar = circle.querySelector('.ultra-progress-bar');
+    progressBar.style.strokeDashoffset = offset;
+    progressBar.style.strokeDasharray = `${circumference} ${circumference}`;
+  });
+  
+  // Chart.js defaults for ultra-modern appearance
+  Chart.defaults.font.size = 10;
+  Chart.defaults.font.family = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
+  Chart.defaults.scale.ticks.padding = 5;
+  Chart.defaults.elements.point.radius = 3;
+  Chart.defaults.elements.point.hoverRadius = 4;
+  Chart.defaults.plugins.tooltip.cornerRadius = 8;
+  Chart.defaults.plugins.tooltip.caretSize = 0;
+  Chart.defaults.plugins.tooltip.titleMarginBottom = 6;
+  
+  // Weekly Performance Chart with ultra-modern styling
+  const weeklyPerformanceEl = document.getElementById('weeklyPerformanceChart');
+  if (weeklyPerformanceEl) {
+    const ctx = weeklyPerformanceEl.getContext('2d');
+    const gradientFill = ctx.createLinearGradient(0, 0, 0, weeklyPerformanceEl.height);
+    gradientFill.addColorStop(0, 'rgba(139, 92, 246, 0.25)');
+    gradientFill.addColorStop(1, 'rgba(139, 92, 246, 0.02)');
+    
+    new Chart(weeklyPerformanceEl, {
+      type: 'bar',
+      data: {
+        labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+        datasets: [{
+          label: 'Hours Active',
+          data: [6.5, 5.9, 6.2, 5.8, 6.3, 5.5, 4.8],
+          backgroundColor: gradientFill,
+          borderColor: '#8b5cf6',
+          borderWidth: 2,
+          borderRadius: 4,
+          barThickness: 10,
+          maxBarThickness: 12
+        }]
       },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        layout: {
+          padding: {
+            top: 5,
+            bottom: 0
+          }
+        },
+        plugins: {
+          legend: {
+            display: false
+          },
+          tooltip: {
+            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+            titleColor: '#1f2937',
+            bodyColor: '#1f2937',
+            titleFont: {
+              size: 11,
+              weight: '600'
+            },
+            bodyFont: {
+              size: 10
+            },
+            padding: 8,
+            boxWidth: 8,
+            boxHeight: 8,
+            usePointStyle: true,
+            borderColor: 'rgba(0, 0, 0, 0.05)',
+            borderWidth: 1,
+            callbacks: {
+              title: function(tooltipItems) {
+                return tooltipItems[0].label + 'day';
+              },
+              label: function(context) {
+                return ' ' + context.raw + ' hours';
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: {
+              display: false
+            },
+            ticks: {
+              font: {
+                size: 10
+              }
+            }
+          },
+          y: {
+            beginAtZero: true,
+            grid: {
+              color: 'rgba(0, 0, 0, 0.03)',
+              drawBorder: false
+            },
+            border: {
+              display: false
+            },
+            ticks: {
+              font: {
+                size: 10
+              },
+              callback: function(value) {
+                return value + 'h';
+              }
+            },
+            max: 8
+          }
+        }
+      }
     });
-
-    if (!resp.ok) {
-      const err = await resp.json().catch(() => ({}));
-      throw new Error(err.error || 'Request failed');
-    }
-
-    const data = await resp.json();
-    if (data.summary) {
-      resultText.textContent = data.summary;
-      resultCard.style.display = 'block';
-    } else {
-      resultText.textContent = data.error || 'No summary returned.';
-      resultCard.style.display = 'block';
-    }
-  } catch (e) {
-    resultText.textContent = 'Error: ' + (e.message || e);
-    resultCard.style.display = 'block';
-  } finally {
-    btn.disabled = false;
-    spinner.style.display = 'none';
   }
+
+  // Monthly Task Chart with ultra-modern styling
+  const monthlyTaskEl = document.getElementById('monthlyTaskChart');
+  if (monthlyTaskEl) {
+    const ctx = monthlyTaskEl.getContext('2d');
+    const gradientBg = ctx.createLinearGradient(0, 0, 0, monthlyTaskEl.height);
+    gradientBg.addColorStop(0, 'rgba(139, 92, 246, 0.3)');
+    gradientBg.addColorStop(1, 'rgba(16, 185, 129, 0.05)');
+    
+    const monthlyChart = new Chart(monthlyTaskEl, {
+      type: 'line',
+      data: {
+        labels: ['1', '5', '10', '15', '20', '25', '30'],
+        datasets: [{
+          label: 'Tasks',
+          data: [12, 19, 10, 15, 22, 18, 17],
+          fill: true,
+          backgroundColor: gradientBg,
+          borderColor: '#8b5cf6',
+          borderWidth: 2,
+          tension: 0.4,
+          pointBackgroundColor: '#8b5cf6',
+          pointBorderColor: 'white',
+          pointBorderWidth: 1.5,
+          pointRadius: 3,
+          pointHoverRadius: 5
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        layout: {
+          padding: {
+            top: 5,
+            bottom: 0
+          }
+        },
+        plugins: {
+          legend: {
+            display: false
+          },
+          tooltip: {
+            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+            titleColor: '#1f2937',
+            bodyColor: '#1f2937',
+            titleFont: {
+              size: 11,
+              weight: '600'
+            },
+            bodyFont: {
+              size: 10
+            },
+            padding: 8,
+            boxWidth: 8,
+            boxHeight: 8,
+            usePointStyle: true,
+            borderColor: 'rgba(0, 0, 0, 0.05)',
+            borderWidth: 1
+          }
+        },
+        scales: {
+          x: {
+            grid: {
+              display: false
+            },
+            ticks: {
+              font: {
+                size: 10
+              }
+            }
+          },
+          y: {
+            beginAtZero: true,
+            grid: {
+              color: 'rgba(0, 0, 0, 0.03)',
+              drawBorder: false
+            },
+            border: {
+              display: false
+            },
+            ticks: {
+              font: {
+                size: 10
+              }
+            }
+          }
+        }
+      }
+    });
+    
+    // Update chart when month changes
+    document.getElementById('monthSelect').addEventListener('change', function() {
+      // This would normally fetch new data based on the selected month
+      // For demo purposes, we'll just randomize the data
+      const newData = Array.from({length: 7}, () => Math.floor(Math.random() * 20) + 5);
+      monthlyChart.data.datasets[0].data = newData;
+      monthlyChart.update();
+    });
+  }
+
+  // Top Users Chart with ultra-modern styling
+  const topUsersEl = document.getElementById('topUsersChart');
+  if (topUsersEl) {
+    const userLabels = [];
+    const completedData = [];
+    const inProgressData = [];
+    
+    {% if top_users %}
+      {% for user in top_users %}
+        userLabels.push('{{ user.username }}');
+        completedData.push({{ user.completed_count }});
+        inProgressData.push({{ user.in_progress_count }});
+      {% endfor %}
+    {% endif %}
+    
+    new Chart(topUsersEl, {
+      type: 'bar',
+      data: {
+        labels: userLabels,
+        datasets: [
+          {
+            label: 'Completed Tasks',
+            data: completedData,
+            backgroundColor: '#8b5cf6',
+            borderRadius: 4,
+            barPercentage: 0.5,
+            categoryPercentage: 0.7
+          },
+          {
+            label: 'In Progress Tasks',
+            data: inProgressData,
+            backgroundColor: '#f59e0b',
+            borderRadius: 4,
+            barPercentage: 0.5,
+            categoryPercentage: 0.7
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        layout: {
+          padding: {
+            top: 5,
+            bottom: 0
+          }
+        },
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: {
+              boxWidth: 8,
+              boxHeight: 8,
+              usePointStyle: true,
+              pointStyle: 'circle',
+              font: {
+                size: 10
+              },
+              padding: 10
+            }
+          },
+          tooltip: {
+            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+            titleColor: '#1f2937',
+            bodyColor: '#1f2937',
+            titleFont: {
+              size: 11,
+              weight: '600'
+            },
+            bodyFont: {
+              size: 10
+            },
+            padding: 8,
+            boxWidth: 8,
+            boxHeight: 8,
+            usePointStyle: true,
+            borderColor: 'rgba(0, 0, 0, 0.05)',
+            borderWidth: 1
+          }
+        },
+        scales: {
+          x: {
+            grid: {
+              display: false
+            },
+            ticks: {
+              font: {
+                size: 10
+              }
+            }
+          },
+          y: {
+            beginAtZero: true,
+            max: 5,
+            grid: {
+              color: 'rgba(0, 0, 0, 0.03)',
+              drawBorder: false
+            },
+            border: {
+              display: false
+            },
+            ticks: {
+              font: {
+                size: 10
+              },
+              stepSize: 1
+            }
+          }
+        }
+      }
+    });
+  }
+});
+
+// Add micro-interactions and animations
+document.addEventListener('DOMContentLoaded', function() {
+  // Add subtle hover effects to all cards
+  const cards = document.querySelectorAll('.card');
+  cards.forEach(card => {
+    card.addEventListener('mouseenter', () => {
+      card.style.transition = 'transform 0.3s ease, box-shadow 0.3s ease';
+      card.style.transform = 'translateY(-2px)';
+      card.style.boxShadow = '0 5px 15px rgba(0,0,0,0.06)';
+    });
+    
+    card.addEventListener('mouseleave', () => {
+      card.style.transform = 'translateY(0)';
+      card.style.boxShadow = '0 2px 10px rgba(0,0,0,0.04)';
+    });
+  });
+  
+  // Add pulse animation to deadline icons
+  const deadlineIcons = document.querySelectorAll('.ultra-deadline-icon');
+  deadlineIcons.forEach(icon => {
+    icon.style.animation = 'pulse 2s infinite';
+  });
+  
+  // Add row hover effect to tables
+  const tableRows = document.querySelectorAll('.ultra-table tbody tr');
+  tableRows.forEach(row => {
+    row.style.cursor = 'pointer';
+  });
+  
+  // Animate notification badges
+  const badges = document.querySelectorAll('.badge');
+  badges.forEach(badge => {
+    badge.style.transition = 'transform 0.3s ease';
+    badge.addEventListener('mouseenter', () => {
+      badge.style.transform = 'scale(1.1)';
+    });
+    badge.addEventListener('mouseleave', () => {
+      badge.style.transform = 'scale(1)';
+    });
+  });
+  
+  // Add smooth transition for notification items
+  const notificationItems = document.querySelectorAll('.ultra-notification-item, .ultra-deadline-item');
+  notificationItems.forEach(item => {
+    item.style.transition = 'background-color 0.2s ease, transform 0.2s ease';
+    item.addEventListener('mouseenter', () => {
+      item.style.transform = 'translateX(3px)';
+    });
+    item.addEventListener('mouseleave', () => {
+      item.style.transform = 'translateX(0)';
+    });
+  });
 });
 </script>
 {% endblock %}
