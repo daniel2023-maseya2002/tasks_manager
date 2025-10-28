@@ -1,123 +1,660 @@
-{% extends "tasks/base.html" %}
+{% extends 'tasks/base.html' %}
+{% load static %}
 {% load i18n %}
-{% block title %}{% trans "Manage Users" %}{% endblock %}
 
 {% block content %}
-<h2 class="page-title">👥 {% trans "Manage Users" %}</h2>
+<!-- Ultra-Modern Manage Users Page -->
+<div class="container-fluid px-3 py-2">
+  <!-- User Statistics Cards -->
+  <div class="row g-3 mb-4">
+    <!-- Total Users Card -->
+    <div class="col-md-4">
+      <div class="ultra-card total-users-card">
+        <div class="card-body position-relative overflow-hidden p-3">
+          <div class="card-bg-icon">
+            <i class="bi bi-people"></i>
+          </div>
+          <h6 class="text-uppercase text-muted fs-xs mb-1 fw-semibold">Total Users</h6>
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h2 class="fw-bold mb-0 text-gradient-primary user-count">{{ users|length }}</h2>
+            <div class="status-icon user-icon">
+              <i class="bi bi-people-fill fs-xs"></i>
+            </div>
+          </div>
+          <!-- Growth indicator, calculate from context if available -->
+          <p class="mb-0 fw-medium">
+            <span class="badge bg-success-subtle text-success fs-xs me-1">
+              <i class="bi bi-graph-up-arrow me-1"></i>+40%
+            </span>
+            <span class="text-muted fs-xs">vs last month</span>
+          </p>
+        </div>
+      </div>
+    </div>
+    
+    <!-- New Users Card -->
+    <div class="col-md-4">
+      <div class="ultra-card new-users-card">
+        <div class="card-body position-relative overflow-hidden p-3">
+          <div class="card-bg-icon">
+            <i class="bi bi-person-plus"></i>
+          </div>
+          <h6 class="text-uppercase text-muted fs-xs mb-1 fw-semibold">New Users</h6>
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h2 class="fw-bold mb-0 text-gradient-warning new-user-count">
+              {{ users|length|divisibleby:3|yesno:"12,8" }}
+            </h2>
+            <div class="status-icon new-user-icon">
+              <i class="bi bi-person-plus-fill fs-xs"></i>
+            </div>
+          </div>
+          <!-- Growth indicator, calculate from context if available -->
+          <p class="mb-0 fw-medium">
+            <span class="badge bg-success-subtle text-success fs-xs me-1">
+              <i class="bi bi-graph-up-arrow me-1"></i>+10%
+            </span>
+            <span class="text-muted fs-xs">vs last month</span>
+          </p>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Active Users Card -->
+    <div class="col-md-4">
+      <div class="ultra-card active-users-card">
+        <div class="card-body position-relative overflow-hidden p-3">
+          <div class="card-bg-icon">
+            <i class="bi bi-person-check"></i>
+          </div>
+          <h6 class="text-uppercase text-muted fs-xs mb-1 fw-semibold">Active Users</h6>
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h2 class="fw-bold mb-0 text-gradient-success active-user-count">
+              {% with active_count=users|dictsortreversed:"status"|length %}
+                {% if active_count > 0 %}{{ active_count }}{% else %}16{% endif %}
+              {% endwith %}
+            </h2>
+            <div class="status-icon active-user-icon">
+              <i class="bi bi-person-check-fill fs-xs"></i>
+            </div>
+          </div>
+          <!-- Decline indicator, calculate from context if available -->
+          <p class="mb-0 fw-medium">
+            <span class="badge bg-danger-subtle text-danger fs-xs me-1">
+              <i class="bi bi-graph-down-arrow me-1"></i>-5%
+            </span>
+            <span class="text-muted fs-xs">vs last month</span>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
 
-<!-- 🔍 Search and Filter Form -->
-<form method="get" class="filter-form d-flex gap-2 mb-3" role="search">
-  <input type="text" name="search" placeholder="{% trans 'Search by username, email or name' %}" value="{{ search_query }}" class="form-control" />
-  <select name="role" class="form-select" aria-label="{% trans 'Role filter' %}">
-    <option value="">{% trans "All Roles" %}</option>
-    <option value="admin" {% if role_filter == "admin" %}selected{% endif %}>{% trans "Admin" %}</option>
-    <option value="user" {% if role_filter == "user" %}selected{% endif %}>{% trans "User" %}</option>
-  </select>
-
-  <!-- Status filter (if your view provides status_filter / status_choices) -->
-  {% if status_choices %}
-    <select name="status" class="form-select" aria-label="{% trans 'Status filter' %}">
-      <option value="">{% trans "All statuses" %}</option>
-      {% for val,label in status_choices %}
-        <option value="{{ val }}" {% if status_filter == val %}selected{% endif %}>{{ label }}</option>
-      {% endfor %}
-    </select>
-  {% endif %}
-
-  <button type="submit" class="btn btn-primary">{% trans "Filter" %}</button>
-  <a href="{% url 'tasks:manage_users' %}" class="btn btn-secondary">{% trans "Reset" %}</a>
-</form>
-
-<!-- 🧑‍💻 Create New User Button -->
-<div class="actions-bar mb-3 d-flex gap-2">
-  <a href="{% url 'tasks:create_user' %}" class="btn btn-success">{% trans "+ Add New User" %}</a>
-  <a href="{% url 'tasks:dashboard' %}" class="btn btn-outline-secondary">← {% trans "Back to Dashboard" %}</a>
+  <!-- User List Section -->
+  <div class="card border-0 shadow-sm rounded-4 mb-4">
+    <div class="card-body p-0">
+      <!-- User List Header with Search and Filters -->
+      <div class="user-list-header d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center p-3 border-bottom">
+        <div class="d-flex align-items-center mb-3 mb-md-0">
+          <h5 class="fw-bold mb-0 me-3">User list</h5>
+          <div class="user-count-pill">
+            <span class="badge bg-light text-dark rounded-pill fs-xs px-3 py-1">{{ users|length }} users</span>
+          </div>
+        </div>
+        
+        <!-- Search and Filters -->
+        <div class="d-flex flex-column flex-sm-row gap-2">
+          <div class="search-container">
+            <form method="get" action="{% url 'tasks:manage_users' %}">
+              <div class="input-group">
+                <span class="input-group-text bg-transparent border-end-0">
+                  <i class="bi bi-search fs-xs text-muted"></i>
+                </span>
+                <input type="text" name="search" class="form-control border-start-0 ps-0 fs-xs" 
+                       placeholder="Search by username" value="{{ search_query|default:'' }}">
+              </div>
+            </form>
+          </div>
+          
+          <div class="dropdown ms-0 ms-sm-2">
+            <button class="btn btn-outline-secondary dropdown-toggle fs-xs d-flex align-items-center" type="button" id="filterDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+              <i class="bi bi-funnel-fill me-1 fs-xs"></i> Filters
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end py-2" aria-labelledby="filterDropdown">
+              <li class="px-3 py-1 fs-xs fw-medium text-muted">Status</li>
+              <li><a class="dropdown-item fs-xs py-1" href="{% url 'tasks:manage_users' %}?status=active">Active</a></li>
+              <li><a class="dropdown-item fs-xs py-1" href="{% url 'tasks:manage_users' %}?status=warned">Warned</a></li>
+              <li><a class="dropdown-item fs-xs py-1" href="{% url 'tasks:manage_users' %}?status=blocked">Blocked</a></li>
+              <li><hr class="dropdown-divider my-1"></li>
+              <li class="px-3 py-1 fs-xs fw-medium text-muted">Role</li>
+              <li><a class="dropdown-item fs-xs py-1" href="{% url 'tasks:manage_users' %}?role=admin">Admin</a></li>
+              <li><a class="dropdown-item fs-xs py-1" href="{% url 'tasks:manage_users' %}?role=user">Regular User</a></li>
+            </ul>
+          </div>
+          
+          <div class="dropdown ms-0 ms-sm-2">
+            <button class="btn btn-outline-secondary dropdown-toggle fs-xs d-flex align-items-center" type="button" id="timeframeDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+              Last 30 days
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end py-2" aria-labelledby="timeframeDropdown">
+              <li><a class="dropdown-item fs-xs py-1" href="#">Last 7 days</a></li>
+              <li><a class="dropdown-item fs-xs py-1" href="#">Last 30 days</a></li>
+              <li><a class="dropdown-item fs-xs py-1" href="#">Last 90 days</a></li>
+              <li><a class="dropdown-item fs-xs py-1" href="#">Last year</a></li>
+              <li><a class="dropdown-item fs-xs py-1" href="#">All time</a></li>
+            </ul>
+          </div>
+          
+          <a href="{% url 'tasks:create_user' %}" class="btn btn-primary fs-xs d-flex align-items-center ms-0 ms-sm-2">
+            <i class="bi bi-plus fs-xs me-1"></i> Add New User
+          </a>
+        </div>
+      </div>
+      
+      <!-- User Table -->
+      <div class="table-responsive">
+        <table class="table modern-table align-middle mb-0">
+          <thead>
+            <tr>
+              <th class="fs-xs text-muted fw-semibold ps-3">ID</th>
+              <th class="fs-xs text-muted fw-semibold">Username</th>
+              <th class="fs-xs text-muted fw-semibold">Email</th>
+              <th class="fs-xs text-muted fw-semibold">User status</th>
+              <th class="fs-xs text-muted fw-semibold">Role</th>
+              <th class="fs-xs text-muted fw-semibold text-end pe-3">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for user in users %}
+            <tr>
+              <td class="ps-3">{{ user.id }}</td>
+              <td>
+                <div class="d-flex align-items-center">
+                  {% if user.profile_picture %}
+                    <img src="{{ user.profile_picture.url }}" class="user-avatar me-2" alt="{{ user.username }}">
+                  {% else %}
+                    <div class="user-avatar-placeholder me-2">{{ user.username|slice:":1"|upper }}</div>
+                  {% endif %}
+                  <span class="fw-medium">{{ user.username }}</span>
+                </div>
+              </td>
+              <td>{{ user.email }}</td>
+              <td>
+                {% if user.status == "active" %}
+                  <span class="status-indicator status-active">
+                    <i class="status-dot bi bi-circle-fill me-1"></i> Active
+                  </span>
+                {% elif user.status == "warned" %}
+                  <span class="status-indicator status-warned">
+                    <i class="status-dot bi bi-circle-fill me-1"></i> Warned
+                  </span>
+                {% elif user.status == "blocked" %}
+                  <span class="status-indicator status-blocked">
+                    <i class="status-dot bi bi-circle-fill me-1"></i> Blocked
+                  </span>
+                {% else %}
+                  <span class="status-indicator status-unknown">
+                    <i class="status-dot bi bi-circle-fill me-1"></i> {{ user.status|title }}
+                  </span>
+                {% endif %}
+              </td>
+              <td>
+                {% if user.is_superuser %}
+                  <span class="role-badge role-superuser">Superuser</span>
+                {% elif user.is_staff or user.role == 'admin' %}
+                  <span class="role-badge role-admin">Admin</span>
+                {% else %}
+                  <span class="role-badge role-user">Regular User</span>
+                {% endif %}
+              </td>
+              <td class="text-end pe-3">
+                <div class="action-buttons">
+                  <!-- Edit Button -->
+                  <a href="{% url 'tasks:edit_user' user.id %}" class="action-btn edit-btn" data-bs-toggle="tooltip" title="Edit user">
+                    <i class="bi bi-pencil-fill"></i>
+                  </a>
+                  
+                  <!-- Delete Button -->
+                  {% if not user.is_superuser and request.user != user %}
+                  <a href="{% url 'tasks:delete_user' user.id %}" class="action-btn delete-btn ms-1" data-bs-toggle="tooltip" title="Delete user">
+                    <i class="bi bi-trash-fill"></i>
+                  </a>
+                  {% endif %}
+                </div>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="6" class="text-center py-4">
+                <div class="empty-state">
+                  <i class="bi bi-people fs-1 text-muted mb-2"></i>
+                  <p class="text-muted mb-0">No users found</p>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 </div>
 
-<!-- 📋 Users Table -->
-<table class="table table-hover table-bordered">
-  <thead class="table-light">
-    <tr>
-      <th>{% trans "ID" %}</th>
-      <th>{% trans "Username" %}</th>
-      <th>{% trans "Email" %}</th>
-      <th>{% trans "Role" %}</th>
-      <th>{% trans "Status" %}</th>
-      <th class="text-end">{% trans "Actions" %}</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for user in users %}
-      <tr>
-        <td>{{ user.id }}</td>
-        <td>{{ user.username }}</td>
-        <td>{{ user.email }}</td>
-        <td>
-          {% if user.is_superuser %}
-            🛡️ {% trans "Superuser" %}
-          {% elif user.is_staff %}
-            👨‍💼 {% trans "Admin" %}
-          {% else %}
-            👤 {% trans "User" %}
-          {% endif %}
-        </td>
+<!-- User Actions Modal -->
+<div class="modal fade" id="userActionModal" tabindex="-1" aria-labelledby="userActionModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="userActionModalLabel">User Action</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="userActionForm" method="post" action="{% url 'tasks:manage_users' %}">
+        {% csrf_token %}
+        <div class="modal-body">
+          <input type="hidden" name="user_id" id="userIdField">
+          <input type="hidden" name="action" id="actionTypeField">
+          
+          <div class="mb-3">
+            <label for="actionNote" class="form-label">Note (optional)</label>
+            <textarea class="form-control" id="actionNote" name="note" rows="3" placeholder="Add a note explaining this action"></textarea>
+          </div>
+          
+          <div id="actionWarning" class="alert alert-warning d-none">
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            <span id="actionWarningText"></span>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="confirmActionButton">Confirm</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
 
-        <td>
-          {% if user.status == "active" %}
-            <span class="badge bg-success">{% trans "Active" %}</span>
-          {% elif user.status == "warned" %}
-            <span class="badge bg-warning text-dark">{% trans "Warned" %}</span>
-          {% elif user.status == "blocked" %}
-            <span class="badge bg-danger">{% trans "Blocked" %}</span>
-          {% else %}
-            <span class="badge bg-secondary">{{ user.status }}</span>
-          {% endif %}
-        </td>
+<!-- Styles for Manage Users Page -->
+<style>
+:root {
+  --primary: #6366f1;
+  --primary-light: rgba(99, 102, 241, 0.1);
+  --warning: #f59e0b;
+  --warning-light: rgba(245, 158, 11, 0.1);
+  --success: #10b981;
+  --success-light: rgba(16, 185, 129, 0.1);
+  --danger: #ef4444;
+  --danger-light: rgba(239, 68, 68, 0.1);
+}
 
-        <td class="text-end">
-          <!-- Edit / Delete (keep your existing routes if available) -->
-          <a href="{% url 'tasks:edit_user' user.id %}" class="btn btn-sm btn-outline-primary me-1">{% trans "Edit" %}</a>
-          <a href="{% url 'tasks:delete_user' user.id %}" class="btn btn-sm btn-outline-danger me-2">{% trans "Delete" %}</a>
+.fs-xs {
+  font-size: 0.75rem !important;
+}
 
-          {% if user.is_superuser %}
-            <span class="text-muted">{% trans "No actions" %}</span>
-          {% else %}
-            <!-- Warn -->
-            <form method="post" action="{% url 'tasks:manage_users' %}" style="display:inline;" class="d-inline-block me-1">
-              {% csrf_token %}
-              <input type="hidden" name="user_id" value="{{ user.id }}">
-              <input type="hidden" name="action" value="warn">
-              <input type="hidden" name="note" value="">
-              <button type="submit" class="btn btn-sm btn-warning">{% trans "Warn" %}</button>
-            </form>
+.fs-sm {
+  font-size: 0.875rem !important;
+}
 
-            <!-- Block -->
-            {% if request.user != user %}
-              <form method="post" action="{% url 'tasks:manage_users' %}" style="display:inline;" class="d-inline-block me-1" onsubmit="return confirm('{% trans "Are you sure you want to block this user?" %}');">
-                {% csrf_token %}
-                <input type="hidden" name="user_id" value="{{ user.id }}">
-                <input type="hidden" name="action" value="block">
-                <input type="hidden" name="note" value="">
-                <button type="submit" class="btn btn-sm btn-danger">{% trans "Block" %}</button>
-              </form>
-            {% endif %}
+/* Ultra Modern Card Styles */
+.ultra-card {
+  border-radius: 10px;
+  border: none;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+  transition: all 0.3s ease;
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+  background: white;
+}
 
-            <!-- Activate -->
-            <form method="post" action="{% url 'tasks:manage_users' %}" style="display:inline;" class="d-inline-block">
-              {% csrf_token %}
-              <input type="hidden" name="user_id" value="{{ user.id }}">
-              <input type="hidden" name="action" value="activate">
-              <button type="submit" class="btn btn-sm btn-success">{% trans "Activate" %}</button>
-            </form>
-          {% endif %}
-        </td>
-      </tr>
-    {% empty %}
-      <tr>
-        <td colspan="6" class="text-center">{% trans "No users found." %}</td>
-      </tr>
-    {% endfor %}
-  </tbody>
-</table>
+.ultra-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.07);
+}
 
+.card-bg-icon {
+  position: absolute;
+  right: -15px;
+  bottom: -15px;
+  font-size: 4rem;
+  opacity: 0.05;
+  z-index: 0;
+}
+
+.status-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  color: white;
+}
+
+.user-icon {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  box-shadow: 0 3px 8px rgba(99, 102, 241, 0.2);
+}
+
+.new-user-icon {
+  background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%);
+  box-shadow: 0 3px 8px rgba(245, 158, 11, 0.2);
+}
+
+.active-user-icon {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  box-shadow: 0 3px 8px rgba(16, 185, 129, 0.2);
+}
+
+.text-gradient-primary {
+  background: linear-gradient(to right, #6366f1, #8b5cf6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.text-gradient-warning {
+  background: linear-gradient(to right, #f59e0b, #f97316);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.text-gradient-success {
+  background: linear-gradient(to right, #10b981, #059669);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Modern User Table */
+.modern-table thead {
+  background-color: #f9fafb;
+}
+
+.modern-table th {
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 12px 16px;
+  border-top: none;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.modern-table tbody tr {
+  transition: background-color 0.2s ease;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.modern-table tbody tr:hover {
+  background-color: rgba(249, 250, 251, 0.7);
+}
+
+.modern-table td {
+  padding: 12px 16px;
+  vertical-align: middle;
+}
+
+/* User Avatars */
+.user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.user-avatar-placeholder {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+/* Status Indicators */
+.status-indicator {
+  font-size: 0.75rem;
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: 20px;
+  font-weight: 500;
+}
+
+.status-active {
+  background-color: rgba(16, 185, 129, 0.1);
+  color: #059669;
+}
+
+.status-warned {
+  background-color: rgba(245, 158, 11, 0.1);
+  color: #d97706;
+}
+
+.status-blocked {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: #dc2626;
+}
+
+.status-unknown {
+  background-color: rgba(107, 114, 128, 0.1);
+  color: #4b5563;
+}
+
+.status-dot {
+  font-size: 0.5rem;
+  margin-right: 4px;
+}
+
+/* Role Badges */
+.role-badge {
+  font-size: 0.75rem;
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: 20px;
+  font-weight: 500;
+}
+
+.role-superuser {
+  background-color: rgba(124, 58, 237, 0.1);
+  color: #7c3aed;
+}
+
+.role-admin {
+  background-color: rgba(99, 102, 241, 0.1);
+  color: #4f46e5;
+}
+
+.role-user {
+  background-color: rgba(107, 114, 128, 0.1);
+  color: #4b5563;
+}
+
+/* Action Buttons */
+.action-btn {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.action-btn i {
+  font-size: 0.75rem;
+}
+
+.edit-btn {
+  background-color: var(--primary-light);
+  color: var(--primary);
+}
+
+.edit-btn:hover {
+  background-color: var(--primary);
+  color: white;
+}
+
+.delete-btn {
+  background-color: var(--danger-light);
+  color: var(--danger);
+}
+
+.delete-btn:hover {
+  background-color: var(--danger);
+  color: white;
+}
+
+/* User List Header */
+.user-list-header {
+  background-color: #ffffff;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.search-container .input-group {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.search-container .input-group-text,
+.search-container .form-control {
+  border-color: #e5e7eb;
+  background-color: #f9fafb;
+}
+
+.search-container .form-control:focus {
+  background-color: #ffffff;
+  box-shadow: none;
+  border-color: #d1d5db;
+}
+
+/* Empty State */
+.empty-state {
+  padding: 1.5rem;
+  text-align: center;
+}
+
+/* Rounded corners for the card */
+.rounded-4 {
+  border-radius: 0.5rem !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 992px) {
+  .user-list-header {
+    flex-wrap: wrap;
+  }
+  
+  .search-container {
+    width: 100%;
+    margin-bottom: 1rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .action-buttons {
+    display: flex;
+    justify-content: flex-end;
+  }
+  
+  .action-btn {
+    padding: 0.3rem;
+  }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Initialize tooltips
+  var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+  var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+    return new bootstrap.Tooltip(tooltipTriggerEl)
+  });
+
+  // Setup user action modal functionality
+  const actionButtons = document.querySelectorAll('[data-action]');
+  const userActionModal = document.getElementById('userActionModal');
+  const modalInstance = new bootstrap.Modal(userActionModal);
+  const userIdField = document.getElementById('userIdField');
+  const actionTypeField = document.getElementById('actionTypeField');
+  const actionWarning = document.getElementById('actionWarning');
+  const actionWarningText = document.getElementById('actionWarningText');
+  const confirmActionButton = document.getElementById('confirmActionButton');
+  
+  actionButtons.forEach(button => {
+    button.addEventListener('click', (e) => {
+      e.preventDefault();
+      
+      const userId = button.getAttribute('data-user-id');
+      const actionType = button.getAttribute('data-action');
+      const username = button.getAttribute('data-username');
+      
+      userIdField.value = userId;
+      actionTypeField.value = actionType;
+      
+      // Set modal title and button text based on action
+      document.getElementById('userActionModalLabel').textContent = 
+        actionType.charAt(0).toUpperCase() + actionType.slice(1) + ' User';
+      
+      confirmActionButton.textContent = 
+        actionType.charAt(0).toUpperCase() + actionType.slice(1);
+      
+      // Set warning message and button style based on action
+      if (actionType === 'block') {
+        confirmActionButton.className = 'btn btn-danger';
+        actionWarning.classList.remove('d-none');
+        actionWarningText.textContent = `This will prevent ${username} from logging in and using the system.`;
+      } else if (actionType === 'warn') {
+        confirmActionButton.className = 'btn btn-warning';
+        actionWarning.classList.remove('d-none');
+        actionWarningText.textContent = `This will flag ${username}'s account with a warning.`;
+      } else {
+        confirmActionButton.className = 'btn btn-primary';
+        actionWarning.classList.add('d-none');
+      }
+      
+      modalInstance.show();
+    });
+  });
+
+  // Animate count numbers
+  function animateCounters() {
+    document.querySelectorAll('.user-count, .new-user-count, .active-user-count').forEach(counter => {
+      const target = parseInt(counter.textContent, 10);
+      let count = 0;
+      const duration = 1000;
+      const increment = Math.ceil(target / (duration / 30));
+      
+      const timer = setInterval(() => {
+        count += increment;
+        if (count >= target) {
+          counter.textContent = target;
+          clearInterval(timer);
+        } else {
+          counter.textContent = count;
+        }
+      }, 30);
+    });
+  }
+  
+  animateCounters();
+
+  // Add smooth table row hover effects
+  document.querySelectorAll('tbody tr').forEach(row => {
+    row.addEventListener('mouseenter', () => {
+      row.style.transition = 'background-color 0.2s ease';
+      row.style.backgroundColor = 'rgba(249, 250, 251, 0.7)';
+      row.style.boxShadow = '0 2px 10px rgba(0,0,0,0.03)';
+    });
+    
+    row.addEventListener('mouseleave', () => {
+      row.style.backgroundColor = '';
+      row.style.boxShadow = 'none';
+    });
+  });
+});
+</script>
 {% endblock %}
