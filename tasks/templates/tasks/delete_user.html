@@ -1,17 +1,538 @@
-{% extends "tasks/base.html" %}
-{% block title %}Delete User{% endblock %}
-{% load i18n %}
-
-{% block content %}
-<h2>Delete User</h2>
-
-<p>Are you sure you want to delete user <strong>{{ user_obj.username }}</strong>?</p>
-
-<form method="POST">
-  {% csrf_token %}
-  <button type="submit" style="background-color:red; color:white; padding:5px 10px;">
-    Yes, Delete
-  </button>
-  <a href="{% url 'tasks:manage_users' %}" class="btn">Cancel</a>
-</form>
-{% endblock %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delete User - Misala</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    
+    <!-- Google Fonts - Poppins & Zen Dots -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Zen+Dots&display=swap" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    <style>
+        :root {
+            --primary-color: #0d6efd;
+            --primary-dark: #0b5ed7;
+            --secondary-color: #6c757d;
+            --success-color: #198754;
+            --danger-color: #dc3545;
+            --danger-dark: #bb2d3b;
+            --light-bg: #f8f9fa;
+            --card-border-radius: 16px;
+            --primary-font: 'Poppins', sans-serif;
+            --heading-font: 'Zen Dots', cursive;
+        }
+        
+        body {
+            font-family: var(--primary-font);
+            background-color: #f5f7fb;
+            color: #333;
+            padding-bottom: 40px;
+        }
+        
+        .page-title {
+            font-family: var(--heading-font);
+            font-size: 2.5rem;
+            text-align: center;
+            margin: 2rem 0;
+            letter-spacing: 2px;
+            color: #333;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .dark-mode .page-title {
+            color: #f8f9fa;
+        }
+        
+        .delete-container {
+            max-width: 600px;
+            margin: 20px auto 40px;
+        }
+        
+        .user-card {
+            border-radius: var(--card-border-radius);
+            border: none;
+            box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .user-card:hover {
+            box-shadow: 0 0.75rem 2rem rgba(0, 0, 0, 0.08);
+        }
+        
+        .card-header {
+            background: linear-gradient(135deg, #dc3545, #c82333);
+            color: white;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .card-header::before {
+            content: "";
+            position: absolute;
+            right: -50px;
+            top: -50px;
+            width: 150px;
+            height: 150px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+        }
+        
+        .card-header::after {
+            content: "";
+            position: absolute;
+            left: -50px;
+            bottom: -50px;
+            width: 120px;
+            height: 120px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+        }
+        
+        .card-header h5 {
+            margin-bottom: 0;
+            font-weight: 600;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .header-icon {
+            font-size: 1.2rem;
+            margin-right: 10px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .profile-container {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 20px;
+            position: relative;
+        }
+        
+        .profile-image {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background-color: #e9ecef;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            color: #adb5bd;
+            overflow: hidden;
+            border: 5px solid white;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+        
+        .profile-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .profile-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(220, 53, 69, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
+        
+        .overlay-icon {
+            font-size: 2rem;
+            color: white;
+        }
+        
+        .user-info {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .user-name {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .user-email {
+            color: #6c757d;
+            font-size: 1rem;
+            margin-bottom: 5px;
+        }
+        
+        .user-role {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 50px;
+            background-color: rgba(13, 110, 253, 0.1);
+            color: #0d6efd;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        
+        .alert-delete {
+            border-left: 4px solid var(--danger-color);
+            background-color: rgba(220, 53, 69, 0.05);
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.2s ease-in-out;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn-danger {
+            background-color: var(--danger-color);
+            border-color: var(--danger-color);
+        }
+        
+        .btn-danger:hover {
+            background-color: var(--danger-dark);
+            border-color: var(--danger-dark);
+        }
+        
+        .btn-outline-secondary {
+            color: var(--secondary-color);
+            border-color: var(--secondary-color);
+        }
+        
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1050;
+        }
+        
+        /* Theme toggle */
+        .theme-toggle {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: var(--primary-color);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            z-index: 1040;
+            transition: all 0.3s ease;
+        }
+        
+        .theme-toggle:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+        }
+        
+        /* Animation effects */
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        
+        @keyframes fadeIn {
+            0% { opacity: 0; transform: translateY(-10px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Pulse animation for delete button */
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(220, 53, 69, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
+        }
+        
+        .btn-pulse {
+            animation: pulse 2s infinite;
+        }
+        
+        /* Dark mode support */
+        .dark-mode {
+            background-color: #121212;
+            color: #f8f9fa;
+        }
+        
+        .dark-mode .user-card {
+            background-color: #1e1e1e;
+            box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.2);
+        }
+        
+        .dark-mode .user-email {
+            color: #adb5bd;
+        }
+        
+        .dark-mode .alert-delete {
+            background-color: rgba(220, 53, 69, 0.1);
+            border-color: var(--danger-color);
+        }
+        
+        .dark-mode .profile-image {
+            background-color: #333;
+            color: #aaa;
+        }
+        
+        /* Responsive styles */
+        @media (max-width: 767.98px) {
+            .page-title {
+                font-size: 2rem;
+                margin: 1.5rem 0;
+            }
+            
+            .delete-container {
+                margin: 10px 20px 40px;
+            }
+            
+            .card-header h5 {
+                font-size: 1.1rem;
+            }
+            
+            .user-name {
+                font-size: 1.3rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Page Title with Zen Dots Font -->
+    <h1 class="page-title">DELETE USER</h1>
+    
+    <!-- Toast Container for Notifications -->
+    <div class="toast-container"></div>
+    
+    <div class="delete-container">
+        <div class="card user-card">
+            <div class="card-header d-flex align-items-center">
+                <i class="bi bi-exclamation-triangle-fill header-icon"></i>
+                <h5>Confirm User Deletion</h5>
+            </div>
+            
+            <div class="card-body">
+                <!-- User Profile Image with Overlay -->
+                <div class="profile-container">
+                    <div class="profile-image">
+                        {% if user.profile_picture %}
+                            <img src="{{ user.profile_picture.url }}" alt="{{ user.get_full_name }}">
+                        {% else %}
+                            <i class="bi bi-person"></i>
+                        {% endif %}
+                        <div class="profile-overlay">
+                            <i class="bi bi-x-circle-fill overlay-icon"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- User Information -->
+                <div class="user-info">
+                    <h2 class="user-name">{{ user.get_full_name|default:user.username }}</h2>
+                    <p class="user-email">{{ user.email }}</p>
+                    <span class="user-role">{{ user.get_role_display }}</span>
+                </div>
+                
+                <!-- Warning Message -->
+                <div class="alert alert-delete p-3 mb-4">
+                    <h6 class="mb-2"><i class="bi bi-exclamation-triangle-fill me-2"></i>Warning</h6>
+                    <p class="mb-0">You are about to permanently delete this user account. This action cannot be undone and all associated data will be lost, including:</p>
+                    <ul class="mt-2 mb-0">
+                        <li>Personal information</li>
+                        <li>Account settings</li>
+                        <li>Task assignments and history</li>
+                        <li>Activity logs</li>
+                    </ul>
+                </div>
+                
+                <!-- Confirmation Form -->
+                <form method="post" action="{% url 'tasks:delete_user' user.id %}" id="deleteUserForm">
+                    {% csrf_token %}
+                    
+                    <div class="form-check mb-4">
+                        <input class="form-check-input" type="checkbox" id="confirmDelete" required>
+                        <label class="form-check-label" for="confirmDelete">
+                            I understand that this action cannot be undone
+                        </label>
+                    </div>
+                    
+                    <!-- Action Buttons -->
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'tasks:manage_users' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-danger" id="deleteButton" disabled>
+                            <i class="bi bi-trash"></i> Delete User
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Theme Toggle Button -->
+    <div class="theme-toggle" onclick="toggleDarkMode()">
+        <i class="bi bi-moon-fill"></i>
+    </div>
+    
+    <!-- Bootstrap JS Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Custom JavaScript -->
+    <script>
+        // Initialize when document is ready
+        document.addEventListener('DOMContentLoaded', function() {
+            // Setup confirmation checkbox
+            const confirmCheckbox = document.getElementById('confirmDelete');
+            const deleteButton = document.getElementById('deleteButton');
+            
+            if (confirmCheckbox && deleteButton) {
+                confirmCheckbox.addEventListener('change', function() {
+                    if (this.checked) {
+                        deleteButton.disabled = false;
+                        deleteButton.classList.add('btn-pulse');
+                    } else {
+                        deleteButton.disabled = true;
+                        deleteButton.classList.remove('btn-pulse');
+                    }
+                });
+            }
+            
+            // Setup form submission
+            const form = document.getElementById('deleteUserForm');
+            if (form) {
+                form.addEventListener('submit', function(event) {
+                    if (!confirmCheckbox.checked) {
+                        event.preventDefault();
+                        showToast('Please confirm the deletion', 'warning');
+                        return;
+                    }
+                    
+                    // Show loading state
+                    deleteButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Deleting...';
+                    deleteButton.disabled = true;
+                });
+            }
+        });
+        
+        /**
+         * Show toast notification
+         * @param {string} message - Message to display
+         * @param {string} type - Toast type (success, danger, info, warning)
+         */
+        function showToast(message, type = 'info') {
+            const toastContainer = document.querySelector('.toast-container');
+            
+            const toastId = 'toast-' + Date.now();
+            const bgClass = type === 'success' ? 'bg-success' : 
+                          type === 'danger' ? 'bg-danger' : 
+                          type === 'warning' ? 'bg-warning' : 'bg-info';
+            
+            // Create toast HTML
+            const toastHtml = `
+                <div id="${toastId}" class="toast align-items-center text-white ${bgClass}" role="alert" aria-live="assertive" aria-atomic="true">
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            <i class="bi ${getToastIcon(type)} me-2"></i> ${message}
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                </div>
+            `;
+            
+            // Add toast to container
+            toastContainer.insertAdjacentHTML('beforeend', toastHtml);
+            
+            // Initialize and show the toast
+            const toast = new bootstrap.Toast(document.getElementById(toastId), {
+                autohide: true,
+                delay: 3000
+            });
+            
+            toast.show();
+            
+            // Remove toast element after it's hidden
+            const toastElement = document.getElementById(toastId);
+            toastElement.addEventListener('hidden.bs.toast', function() {
+                toastElement.remove();
+            });
+        }
+        
+        /**
+         * Get the appropriate icon for toast type
+         * @param {string} type - Toast type
+         * @returns {string} - Bootstrap icon class
+         */
+        function getToastIcon(type) {
+            switch (type) {
+                case 'success': return 'bi-check-circle-fill';
+                case 'danger': return 'bi-exclamation-circle-fill';
+                case 'warning': return 'bi-exclamation-triangle-fill';
+                default: return 'bi-info-circle-fill';
+            }
+        }
+        
+        /**
+         * Toggle dark mode
+         */
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+            
+            // Toggle icon
+            const themeIcon = document.querySelector('.theme-toggle i');
+            if (themeIcon) {
+                if (document.body.classList.contains('dark-mode')) {
+                    themeIcon.classList.remove('bi-moon-fill');
+                    themeIcon.classList.add('bi-sun-fill');
+                } else {
+                    themeIcon.classList.remove('bi-sun-fill');
+                    themeIcon.classList.add('bi-moon-fill');
+                }
+            }
+            
+            // Save preference
+            const isDarkMode = document.body.classList.contains('dark-mode');
+            localStorage.setItem('darkMode', isDarkMode ? 'enabled' : 'disabled');
+            
+            // Show toast
+            showToast(`Dark mode ${isDarkMode ? 'enabled' : 'disabled'}`, 'info');
+        }
+        
+        // Check for saved dark mode preference on load
+        if (localStorage.getItem('darkMode') === 'enabled') {
+            document.body.classList.add('dark-mode');
+            
+            // Update icon
+            const themeIcon = document.querySelector('.theme-toggle i');
+            if (themeIcon) {
+                themeIcon.classList.remove('bi-moon-fill');
+                themeIcon.classList.add('bi-sun-fill');
+            }
+        }
+    </script>
+</body>
+</html>

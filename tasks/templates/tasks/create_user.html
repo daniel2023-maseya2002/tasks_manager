@@ -1,22 +1,1277 @@
-{% extends "tasks/base.html" %}
-{% block title %}Create User{% endblock %}
-{% load i18n %}
-
-{% block content %}
-<h2>Create New User</h2>
-
-<form method="POST" class="form-container">
-  {% csrf_token %}
-  {{ form.as_p }}
-
-  <label>Role:</label><br>
-  <select name="role" required>
-    <option value="user">User</option>
-    <option value="admin">Admin</option>
-  </select><br><br>
-
-  <button type="submit" class="btn btn-success">Create User</button>
-</form>
-
-<p><a href="{% url 'tasks:manage_users' %}" class="btn btn-secondary">Back to Users</a></p>
-{% endblock %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add New User - Misala</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    
+    <!-- Google Fonts - Poppins & Zen Dots -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Zen+Dots&display=swap" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    <style>
+        :root {
+            --primary-color: #0d6efd;
+            --primary-dark: #0b5ed7;
+            --secondary-color: #6c757d;
+            --success-color: #198754;
+            --danger-color: #dc3545;
+            --light-bg: #f8f9fa;
+            --card-border-radius: 16px;
+            --primary-font: 'Poppins', sans-serif;
+            --heading-font: 'Zen Dots', cursive;
+        }
+        
+        body {
+            font-family: var(--primary-font);
+            background-color: #f5f7fb;
+            color: #333;
+            padding-bottom: 40px;
+        }
+        
+        .page-title {
+            font-family: var(--heading-font);
+            font-size: 2.5rem;
+            text-align: center;
+            margin: 2rem 0;
+            letter-spacing: 2px;
+            color: #333;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .dark-mode .page-title {
+            color: #f8f9fa;
+        }
+        
+        .form-container {
+            max-width: 700px;
+            margin: 20px auto 40px;
+        }
+        
+        .user-card {
+            border-radius: var(--card-border-radius);
+            border: none;
+            box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .user-card:hover {
+            box-shadow: 0 0.75rem 2rem rgba(0, 0, 0, 0.08);
+        }
+        
+        .card-header {
+            background: linear-gradient(135deg, #4e73df, #224abe);
+            color: white;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .card-header::before {
+            content: "";
+            position: absolute;
+            right: -50px;
+            top: -50px;
+            width: 150px;
+            height: 150px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+        }
+        
+        .card-header::after {
+            content: "";
+            position: absolute;
+            left: -50px;
+            bottom: -50px;
+            width: 120px;
+            height: 120px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+        }
+        
+        .card-header h5 {
+            margin-bottom: 0;
+            font-weight: 600;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .user-icon {
+            font-size: 1.2rem;
+            margin-right: 10px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-label {
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: #495057;
+        }
+        
+        .form-control {
+            border-radius: 8px;
+            padding: 12px 15px;
+            border: 1px solid #e1e5eb;
+            transition: all 0.3s ease;
+            font-size: 0.95rem;
+        }
+        
+        .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
+        }
+        
+        .form-select {
+            border-radius: 8px;
+            padding: 12px 15px;
+            border: 1px solid #e1e5eb;
+            font-size: 0.95rem;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.2s ease-in-out;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--primary-dark);
+            border-color: var(--primary-dark);
+        }
+        
+        .btn-outline-secondary {
+            color: var(--secondary-color);
+            border-color: var(--secondary-color);
+        }
+        
+        .section-divider {
+            border-top: 1px solid #e1e5eb;
+            margin: 30px 0;
+        }
+        
+        .country-flag {
+            width: 20px;
+            height: 15px;
+            margin-right: 8px;
+            vertical-align: middle;
+            box-shadow: 0 0 1px rgba(0,0,0,0.2);
+            border-radius: 2px;
+        }
+        
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1050;
+        }
+        
+        /* Password strength indicator */
+        .password-strength {
+            height: 5px;
+            margin-top: 5px;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+        
+        .password-feedback {
+            font-size: 0.8rem;
+            margin-top: 5px;
+        }
+        
+        .strength-weak {
+            background-color: #dc3545;
+            width: 30%;
+        }
+        
+        .strength-medium {
+            background-color: #ffc107;
+            width: 60%;
+        }
+        
+        .strength-strong {
+            background-color: #198754;
+            width: 100%;
+        }
+        
+        /* Theme toggle */
+        .theme-toggle {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: var(--primary-color);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            z-index: 1040;
+            transition: all 0.3s ease;
+        }
+        
+        .theme-toggle:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+        }
+        
+        /* Profile image upload */
+        .profile-upload-container {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 20px;
+            position: relative;
+        }
+        
+        .profile-placeholder {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background-color: #e9ecef;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            color: #adb5bd;
+            overflow: hidden;
+            border: 5px solid white;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .profile-placeholder img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .upload-btn-wrapper {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+        }
+        
+        .upload-btn {
+            background-color: rgba(255, 255, 255, 0.9);
+            color: #333;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border: 2px solid #fff;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .upload-btn:hover {
+            background-color: var(--primary-color);
+            color: white;
+            transform: scale(1.1);
+        }
+        
+        .upload-btn-wrapper input[type=file] {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+        
+        /* Animation effects */
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        
+        @keyframes fadeIn {
+            0% { opacity: 0; transform: translateY(-10px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Help text */
+        .form-text {
+            font-size: 0.85rem;
+            color: var(--secondary-color);
+        }
+        
+        /* Country code dropdown */
+        .country-dropdown {
+            max-height: 200px;
+            overflow-y: auto;
+            min-width: 250px;
+        }
+        
+        .country-dropdown .dropdown-item {
+            padding: 8px 15px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .country-dropdown .dropdown-item:hover {
+            background-color: rgba(13, 110, 253, 0.08);
+        }
+        
+        .country-dropdown .dropdown-item.active {
+            background-color: rgba(13, 110, 253, 0.15);
+            color: #212529;
+        }
+        
+        .country-code {
+            margin-left: 8px;
+            font-size: 0.85rem;
+            color: var(--secondary-color);
+        }
+        
+        .phone-input-group {
+            display: flex;
+        }
+        
+        .country-selector {
+            min-width: 100px;
+            border-top-right-radius: 0;
+            border-bottom-right-radius: 0;
+            background-color: #f8f9fa;
+            border-right: none;
+        }
+        
+        .phone-input {
+            border-top-left-radius: 0;
+            border-bottom-left-radius: 0;
+            flex-grow: 1;
+        }
+        
+        /* Dark mode support */
+        .dark-mode {
+            background-color: #121212;
+            color: #f8f9fa;
+        }
+        
+        .dark-mode .user-card {
+            background-color: #1e1e1e;
+            box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.2);
+        }
+        
+        .dark-mode .form-control,
+        .dark-mode .form-select,
+        .dark-mode .country-selector {
+            background-color: #2d2d2d;
+            border-color: #444;
+            color: #f8f9fa;
+        }
+        
+        .dark-mode .form-label {
+            color: #d0d0d0;
+        }
+        
+        .dark-mode .section-divider {
+            border-top-color: #444;
+        }
+        
+        .dark-mode .profile-placeholder {
+            background-color: #333;
+            color: #aaa;
+        }
+        
+        .dark-mode .form-text {
+            color: #aaa;
+        }
+        
+        .dark-mode .country-dropdown {
+            background-color: #2d2d2d;
+        }
+        
+        .dark-mode .country-dropdown .dropdown-item {
+            color: #f8f9fa;
+        }
+        
+        .dark-mode .country-dropdown .dropdown-item:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .dark-mode .country-dropdown .dropdown-item.active {
+            background-color: rgba(255, 255, 255, 0.15);
+            color: #f8f9fa;
+        }
+        
+        .dark-mode .country-code {
+            color: #aaa;
+        }
+        
+        /* Form validation styles */
+        .form-control.is-invalid {
+            border-color: var(--danger-color);
+            padding-right: calc(1.5em + 0.75rem);
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23dc3545'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath stroke-linejoin='round' d='M5.8 3.6h.4L6 6.5z'/%3e%3ccircle cx='6' cy='8.2' r='.6' fill='%23dc3545' stroke='none'/%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right calc(0.375em + 0.1875rem) center;
+            background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+        }
+        
+        .invalid-feedback {
+            display: none;
+            width: 100%;
+            margin-top: 0.25rem;
+            font-size: 0.875em;
+            color: var(--danger-color);
+        }
+        
+        .was-validated .form-control:invalid ~ .invalid-feedback,
+        .form-control.is-invalid ~ .invalid-feedback {
+            display: block;
+        }
+        
+        /* Responsive styles */
+        @media (max-width: 767.98px) {
+            .page-title {
+                font-size: 2rem;
+                margin: 1.5rem 0;
+            }
+            
+            .form-container {
+                margin: 10px 20px 40px;
+            }
+            
+            .card-header h5 {
+                font-size: 1.1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Page Title with Zen Dots Font -->
+    <h1 class="page-title">ADD USER</h1>
+    
+    <!-- Toast Container for Notifications -->
+    <div class="toast-container"></div>
+    
+    <div class="form-container">
+        <div class="card user-card">
+            <div class="card-header d-flex align-items-center">
+                <i class="bi bi-person-plus-fill user-icon"></i>
+                <h5>Create New User Account</h5>
+            </div>
+            
+            <div class="card-body">
+                <form id="createUserForm" action="{% url 'tasks:create_user' %}" method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    
+                    <!-- Profile Photo Upload -->
+                    <div class="text-center mb-4">
+                        <div class="profile-upload-container">
+                            <div class="profile-placeholder" id="profilePlaceholder">
+                                <i class="bi bi-person"></i>
+                            </div>
+                            <div class="upload-btn-wrapper">
+                                <div class="upload-btn">
+                                    <i class="bi bi-camera-fill"></i>
+                                </div>
+                                <input type="file" name="profile_picture" id="profilePhotoInput" 
+                                      accept="image/*" onchange="previewImage(this)">
+                            </div>
+                        </div>
+                        <p class="text-muted small">Upload a profile photo (optional)</p>
+                    </div>
+                    
+                    <!-- Basic Information -->
+                    <h6 class="mb-3">Account Information</h6>
+                    
+                    <div class="row">
+                        <!-- Username -->
+                        <div class="col-md-6 form-group">
+                            <label for="username" class="form-label">Username</label>
+                            <input type="text" class="form-control" id="username" name="username"
+                                   placeholder="Username" required>
+                            <div class="invalid-feedback">Please provide a username.</div>
+                            <div class="form-text">Username must be unique and can't be changed later.</div>
+                        </div>
+                        
+                        <!-- Email -->
+                        <div class="col-md-6 form-group">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="email" name="email"
+                                   placeholder="Email Address" required>
+                            <div class="invalid-feedback">Please provide a valid email address.</div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <!-- Password -->
+                        <div class="col-md-6 form-group">
+                            <label for="password1" class="form-label">Password</label>
+                            <input type="password" class="form-control" id="password1" name="password1"
+                                   placeholder="Password" required onkeyup="checkPasswordStrength()">
+                            <div class="password-strength" id="passwordStrength"></div>
+                            <div class="password-feedback" id="passwordFeedback"></div>
+                            <div class="invalid-feedback">Please provide a password.</div>
+                        </div>
+                        
+                        <!-- Confirm Password -->
+                        <div class="col-md-6 form-group">
+                            <label for="password2" class="form-label">Confirm Password</label>
+                            <input type="password" class="form-control" id="password2" name="password2"
+                                   placeholder="Confirm Password" required onkeyup="checkPasswordMatch()">
+                            <div class="form-text" id="passwordMatchFeedback"></div>
+                            <div class="invalid-feedback">Please confirm your password.</div>
+                        </div>
+                    </div>
+                    
+                    <div class="section-divider"></div>
+                    
+                    <!-- Personal Information -->
+                    <h6 class="mb-3">Personal Information</h6>
+                    
+                    <div class="row">
+                        <!-- First Name -->
+                        <div class="col-md-6 form-group">
+                            <label for="firstName" class="form-label">First Name</label>
+                            <input type="text" class="form-control" id="firstName" name="first_name"
+                                   placeholder="First Name">
+                        </div>
+                        
+                        <!-- Last Name -->
+                        <div class="col-md-6 form-group">
+                            <label for="lastName" class="form-label">Last Name</label>
+                            <input type="text" class="form-control" id="lastName" name="last_name"
+                                   placeholder="Last Name">
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <!-- Phone Number with Country Selector -->
+                        <div class="col-md-6 form-group">
+                            <label for="phone" class="form-label">Phone Number</label>
+                            <div class="input-group">
+                                <!-- Country Dropdown Button -->
+                                <button class="btn btn-outline-secondary dropdown-toggle country-selector" type="button" 
+                                        data-bs-toggle="dropdown" aria-expanded="false" id="countryDropdownButton">
+                                    <img src="https://flagcdn.com/16x12/rw.png" class="country-flag" id="selectedFlag" alt="RW">
+                                    <span id="selectedDialCode">+250</span>
+                                </button>
+                                <!-- Dropdown Menu with Search -->
+                                <div class="dropdown-menu country-dropdown p-0">
+                                    <div class="p-2">
+                                        <input type="text" class="form-control form-control-sm mb-2" 
+                                               id="countrySearch" placeholder="Search country...">
+                                    </div>
+                                    <div id="countryList" style="max-height: 200px; overflow-y: auto;">
+                                        <!-- Countries will be populated by JavaScript -->
+                                    </div>
+                                </div>
+                                <input type="tel" class="form-control phone-input" id="phone" name="phone_number"
+                                       placeholder="Phone Number">
+                                <input type="hidden" name="country_code" id="countryCode" value="RW">
+                                <input type="hidden" name="dial_code" id="dialCode" value="+250">
+                            </div>
+                            <div class="form-text">Include your country code.</div>
+                        </div>
+                        
+                        <!-- Address -->
+                        <div class="col-md-6 form-group">
+                            <label for="address" class="form-label">Address</label>
+                            <input type="text" class="form-control" id="address" name="address"
+                                   placeholder="Address">
+                        </div>
+                    </div>
+                    
+                    <!-- Bio -->
+                    <div class="form-group">
+                        <label for="bio" class="form-label">Bio</label>
+                        <textarea class="form-control" id="bio" name="bio" rows="3" 
+                                 placeholder="Brief description (optional)"></textarea>
+                    </div>
+                    
+                    {% if request.user.is_superuser %}
+                    <!-- Admin Options (only for superusers) -->
+                    <div class="section-divider"></div>
+                    
+                    <h6 class="mb-3">Administrative Options</h6>
+                    
+                    <div class="row">
+                        <!-- Role -->
+                        <div class="col-md-6 form-group">
+                            <label for="role" class="form-label">Role</label>
+                            <select class="form-select" id="role" name="role">
+                                <option value="user" selected>User</option>
+                                <option value="admin">Admin</option>
+                                <option value="manager">Manager</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Notifications -->
+                        <div class="col-md-6 form-group">
+                            <label class="form-label d-block">Email Notifications</label>
+                            <div class="form-check form-switch mt-2">
+                                <input class="form-check-input" type="checkbox" id="emailNotifications" name="email_notifications" checked>
+                                <label class="form-check-label" for="emailNotifications">
+                                    Enable email notifications
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Actions -->
+                    <div class="section-divider"></div>
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'tasks:manage_users' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-person-plus-fill"></i> Create User
+                        </button>
+                    </div>
+                    
+                    <!-- Display form errors if any -->
+                    {% if form.errors %}
+                    <div class="alert alert-danger mt-4">
+                        <h6 class="alert-heading"><i class="bi bi-exclamation-triangle-fill me-2"></i>Please correct the errors below:</h6>
+                        <ul class="mb-0">
+                            {% for field in form %}
+                                {% for error in field.errors %}
+                                    <li>{{ field.label }}: {{ error }}</li>
+                                {% endfor %}
+                            {% endfor %}
+                            {% for error in form.non_field_errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                    
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Theme Toggle Button -->
+    <div class="theme-toggle" onclick="toggleDarkMode()">
+        <i class="bi bi-moon-fill"></i>
+    </div>
+    
+    <!-- Bootstrap JS Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Custom JavaScript -->
+    <script>
+        // Country data with flag codes, dial codes
+        const countries = [
+            { name: "Afghanistan", code: "AF", dial_code: "+93" },
+            { name: "Albania", code: "AL", dial_code: "+355" },
+            { name: "Algeria", code: "DZ", dial_code: "+213" },
+            { name: "Andorra", code: "AD", dial_code: "+376" },
+            { name: "Angola", code: "AO", dial_code: "+244" },
+            { name: "Argentina", code: "AR", dial_code: "+54" },
+            { name: "Armenia", code: "AM", dial_code: "+374" },
+            { name: "Australia", code: "AU", dial_code: "+61" },
+            { name: "Austria", code: "AT", dial_code: "+43" },
+            { name: "Azerbaijan", code: "AZ", dial_code: "+994" },
+            { name: "Bahamas", code: "BS", dial_code: "+1242" },
+            { name: "Bahrain", code: "BH", dial_code: "+973" },
+            { name: "Bangladesh", code: "BD", dial_code: "+880" },
+            { name: "Barbados", code: "BB", dial_code: "+1246" },
+            { name: "Belarus", code: "BY", dial_code: "+375" },
+            { name: "Belgium", code: "BE", dial_code: "+32" },
+            { name: "Belize", code: "BZ", dial_code: "+501" },
+            { name: "Benin", code: "BJ", dial_code: "+229" },
+            { name: "Bhutan", code: "BT", dial_code: "+975" },
+            { name: "Bolivia", code: "BO", dial_code: "+591" },
+            { name: "Bosnia and Herzegovina", code: "BA", dial_code: "+387" },
+            { name: "Botswana", code: "BW", dial_code: "+267" },
+            { name: "Brazil", code: "BR", dial_code: "+55" },
+            { name: "Brunei Darussalam", code: "BN", dial_code: "+673" },
+            { name: "Bulgaria", code: "BG", dial_code: "+359" },
+            { name: "Burkina Faso", code: "BF", dial_code: "+226" },
+            { name: "Burundi", code: "BI", dial_code: "+257" },
+            { name: "Cambodia", code: "KH", dial_code: "+855" },
+            { name: "Cameroon", code: "CM", dial_code: "+237" },
+            { name: "Canada", code: "CA", dial_code: "+1" },
+            { name: "Cape Verde", code: "CV", dial_code: "+238" },
+            { name: "Central African Republic", code: "CF", dial_code: "+236" },
+            { name: "Chad", code: "TD", dial_code: "+235" },
+            { name: "Chile", code: "CL", dial_code: "+56" },
+            { name: "China", code: "CN", dial_code: "+86" },
+            { name: "Colombia", code: "CO", dial_code: "+57" },
+            { name: "Comoros", code: "KM", dial_code: "+269" },
+            { name: "Congo", code: "CG", dial_code: "+242" },
+            { name: "Costa Rica", code: "CR", dial_code: "+506" },
+            { name: "Croatia", code: "HR", dial_code: "+385" },
+            { name: "Cuba", code: "CU", dial_code: "+53" },
+            { name: "Cyprus", code: "CY", dial_code: "+357" },
+            { name: "Czech Republic", code: "CZ", dial_code: "+420" },
+            { name: "Denmark", code: "DK", dial_code: "+45" },
+            { name: "Djibouti", code: "DJ", dial_code: "+253" },
+            { name: "Dominican Republic", code: "DO", dial_code: "+1809" },
+            { name: "Ecuador", code: "EC", dial_code: "+593" },
+            { name: "Egypt", code: "EG", dial_code: "+20" },
+            { name: "El Salvador", code: "SV", dial_code: "+503" },
+            { name: "Equatorial Guinea", code: "GQ", dial_code: "+240" },
+            { name: "Eritrea", code: "ER", dial_code: "+291" },
+            { name: "Estonia", code: "EE", dial_code: "+372" },
+            { name: "Ethiopia", code: "ET", dial_code: "+251" },
+            { name: "Fiji", code: "FJ", dial_code: "+679" },
+            { name: "Finland", code: "FI", dial_code: "+358" },
+            { name: "France", code: "FR", dial_code: "+33" },
+            { name: "Gabon", code: "GA", dial_code: "+241" },
+            { name: "Gambia", code: "GM", dial_code: "+220" },
+            { name: "Georgia", code: "GE", dial_code: "+995" },
+            { name: "Germany", code: "DE", dial_code: "+49" },
+            { name: "Ghana", code: "GH", dial_code: "+233" },
+            { name: "Greece", code: "GR", dial_code: "+30" },
+            { name: "Guatemala", code: "GT", dial_code: "+502" },
+            { name: "Guinea", code: "GN", dial_code: "+224" },
+            { name: "Guinea-Bissau", code: "GW", dial_code: "+245" },
+            { name: "Haiti", code: "HT", dial_code: "+509" },
+            { name: "Honduras", code: "HN", dial_code: "+504" },
+            { name: "Hungary", code: "HU", dial_code: "+36" },
+            { name: "Iceland", code: "IS", dial_code: "+354" },
+            { name: "India", code: "IN", dial_code: "+91" },
+            { name: "Indonesia", code: "ID", dial_code: "+62" },
+            { name: "Iran", code: "IR", dial_code: "+98" },
+            { name: "Iraq", code: "IQ", dial_code: "+964" },
+            { name: "Ireland", code: "IE", dial_code: "+353" },
+            { name: "Israel", code: "IL", dial_code: "+972" },
+            { name: "Italy", code: "IT", dial_code: "+39" },
+            { name: "Jamaica", code: "JM", dial_code: "+1876" },
+            { name: "Japan", code: "JP", dial_code: "+81" },
+            { name: "Jordan", code: "JO", dial_code: "+962" },
+            { name: "Kazakhstan", code: "KZ", dial_code: "+7" },
+            { name: "Kenya", code: "KE", dial_code: "+254" },
+            { name: "Kiribati", code: "KI", dial_code: "+686" },
+            { name: "Korea, South", code: "KR", dial_code: "+82" },
+            { name: "Kuwait", code: "KW", dial_code: "+965" },
+            { name: "Kyrgyzstan", code: "KG", dial_code: "+996" },
+            { name: "Laos", code: "LA", dial_code: "+856" },
+            { name: "Latvia", code: "LV", dial_code: "+371" },
+            { name: "Lebanon", code: "LB", dial_code: "+961" },
+            { name: "Lesotho", code: "LS", dial_code: "+266" },
+            { name: "Liberia", code: "LR", dial_code: "+231" },
+            { name: "Libya", code: "LY", dial_code: "+218" },
+            { name: "Liechtenstein", code: "LI", dial_code: "+423" },
+            { name: "Lithuania", code: "LT", dial_code: "+370" },
+            { name: "Luxembourg", code: "LU", dial_code: "+352" },
+            { name: "Madagascar", code: "MG", dial_code: "+261" },
+            { name: "Malawi", code: "MW", dial_code: "+265" },
+            { name: "Malaysia", code: "MY", dial_code: "+60" },
+            { name: "Maldives", code: "MV", dial_code: "+960" },
+            { name: "Mali", code: "ML", dial_code: "+223" },
+            { name: "Malta", code: "MT", dial_code: "+356" },
+            { name: "Marshall Islands", code: "MH", dial_code: "+692" },
+            { name: "Mauritania", code: "MR", dial_code: "+222" },
+            { name: "Mauritius", code: "MU", dial_code: "+230" },
+            { name: "Mexico", code: "MX", dial_code: "+52" },
+            { name: "Micronesia", code: "FM", dial_code: "+691" },
+            { name: "Moldova", code: "MD", dial_code: "+373" },
+            { name: "Monaco", code: "MC", dial_code: "+377" },
+            { name: "Mongolia", code: "MN", dial_code: "+976" },
+            { name: "Montenegro", code: "ME", dial_code: "+382" },
+            { name: "Morocco", code: "MA", dial_code: "+212" },
+            { name: "Mozambique", code: "MZ", dial_code: "+258" },
+            { name: "Myanmar", code: "MM", dial_code: "+95" },
+            { name: "Namibia", code: "NA", dial_code: "+264" },
+            { name: "Nauru", code: "NR", dial_code: "+674" },
+            { name: "Nepal", code: "NP", dial_code: "+977" },
+            { name: "Netherlands", code: "NL", dial_code: "+31" },
+            { name: "New Zealand", code: "NZ", dial_code: "+64" },
+            { name: "Nicaragua", code: "NI", dial_code: "+505" },
+            { name: "Niger", code: "NE", dial_code: "+227" },
+            { name: "Nigeria", code: "NG", dial_code: "+234" },
+            { name: "North Macedonia", code: "MK", dial_code: "+389" },
+            { name: "Norway", code: "NO", dial_code: "+47" },
+            { name: "Oman", code: "OM", dial_code: "+968" },
+            { name: "Pakistan", code: "PK", dial_code: "+92" },
+            { name: "Palau", code: "PW", dial_code: "+680" },
+            { name: "Panama", code: "PA", dial_code: "+507" },
+            { name: "Papua New Guinea", code: "PG", dial_code: "+675" },
+            { name: "Paraguay", code: "PY", dial_code: "+595" },
+            { name: "Peru", code: "PE", dial_code: "+51" },
+            { name: "Philippines", code: "PH", dial_code: "+63" },
+            { name: "Poland", code: "PL", dial_code: "+48" },
+            { name: "Portugal", code: "PT", dial_code: "+351" },
+            { name: "Qatar", code: "QA", dial_code: "+974" },
+            { name: "Romania", code: "RO", dial_code: "+40" },
+            { name: "Russian Federation", code: "RU", dial_code: "+7" },
+            { name: "Rwanda", code: "RW", dial_code: "+250" },
+            { name: "Saint Kitts and Nevis", code: "KN", dial_code: "+1869" },
+            { name: "Saint Lucia", code: "LC", dial_code: "+1758" },
+            { name: "Saint Vincent", code: "VC", dial_code: "+1784" },
+            { name: "Samoa", code: "WS", dial_code: "+685" },
+            { name: "San Marino", code: "SM", dial_code: "+378" },
+            { name: "Saudi Arabia", code: "SA", dial_code: "+966" },
+            { name: "Senegal", code: "SN", dial_code: "+221" },
+            { name: "Serbia", code: "RS", dial_code: "+381" },
+            { name: "Seychelles", code: "SC", dial_code: "+248" },
+            { name: "Sierra Leone", code: "SL", dial_code: "+232" },
+            { name: "Singapore", code: "SG", dial_code: "+65" },
+            { name: "Slovakia", code: "SK", dial_code: "+421" },
+            { name: "Slovenia", code: "SI", dial_code: "+386" },
+            { name: "Solomon Islands", code: "SB", dial_code: "+677" },
+            { name: "Somalia", code: "SO", dial_code: "+252" },
+            { name: "South Africa", code: "ZA", dial_code: "+27" },
+            { name: "South Sudan", code: "SS", dial_code: "+211" },
+            { name: "Spain", code: "ES", dial_code: "+34" },
+            { name: "Sri Lanka", code: "LK", dial_code: "+94" },
+            { name: "Sudan", code: "SD", dial_code: "+249" },
+            { name: "Suriname", code: "SR", dial_code: "+597" },
+            { name: "Swaziland", code: "SZ", dial_code: "+268" },
+            { name: "Sweden", code: "SE", dial_code: "+46" },
+            { name: "Switzerland", code: "CH", dial_code: "+41" },
+            { name: "Syria", code: "SY", dial_code: "+963" },
+            { name: "Taiwan", code: "TW", dial_code: "+886" },
+            { name: "Tajikistan", code: "TJ", dial_code: "+992" },
+            { name: "Tanzania", code: "TZ", dial_code: "+255" },
+            { name: "Thailand", code: "TH", dial_code: "+66" },
+            { name: "Timor-Leste", code: "TL", dial_code: "+670" },
+            { name: "Togo", code: "TG", dial_code: "+228" },
+            { name: "Tonga", code: "TO", dial_code: "+676" },
+            { name: "Trinidad and Tobago", code: "TT", dial_code: "+1868" },
+            { name: "Tunisia", code: "TN", dial_code: "+216" },
+            { name: "Turkey", code: "TR", dial_code: "+90" },
+            { name: "Turkmenistan", code: "TM", dial_code: "+993" },
+            { name: "Tuvalu", code: "TV", dial_code: "+688" },
+            { name: "Uganda", code: "UG", dial_code: "+256" },
+            { name: "Ukraine", code: "UA", dial_code: "+380" },
+            { name: "United Arab Emirates", code: "AE", dial_code: "+971" },
+            { name: "United Kingdom", code: "GB", dial_code: "+44" },
+            { name: "United States", code: "US", dial_code: "+1" },
+            { name: "Uruguay", code: "UY", dial_code: "+598" },
+            { name: "Uzbekistan", code: "UZ", dial_code: "+998" },
+            { name: "Vanuatu", code: "VU", dial_code: "+678" },
+            { name: "Venezuela", code: "VE", dial_code: "+58" },
+            { name: "Vietnam", code: "VN", dial_code: "+84" },
+            { name: "Yemen", code: "YE", dial_code: "+967" },
+            { name: "Zambia", code: "ZM", dial_code: "+260" },
+            { name: "Zimbabwe", code: "ZW", dial_code: "+263" }
+        ];
+        
+        // Initialize when document is ready
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize tooltips
+            initializeTooltips();
+            
+            // Initialize form validation
+            setupFormValidation();
+            
+            // Setup country selector
+            setupCountrySelector();
+        });
+        
+        /**
+         * Initialize Bootstrap tooltips
+         */
+        function initializeTooltips() {
+            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            tooltipTriggerList.map(function(tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+        }
+        
+        /**
+         * Set up form validation
+         */
+        function setupFormValidation() {
+            const form = document.getElementById('createUserForm');
+            
+            if (form) {
+                // Handle form submission
+                form.addEventListener('submit', function(event) {
+                    if (!validateForm()) {
+                        event.preventDefault();
+                        showToast('Please fix the errors in the form', 'danger');
+                        return false;
+                    }
+                    
+                    // Show loading state on submit button
+                    const submitBtn = this.querySelector('button[type="submit"]');
+                    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Creating...';
+                    submitBtn.disabled = true;
+                });
+            }
+        }
+        
+        /**
+         * Setup the country selector for phone numbers
+         */
+        function setupCountrySelector() {
+            const countryList = document.getElementById('countryList');
+            const countrySearch = document.getElementById('countrySearch');
+            
+            // Populate country list
+            populateCountryList(countries);
+            
+            // Set initial selection (Rwanda)
+            const defaultCountry = countries.find(country => country.code === 'RW');
+            if (defaultCountry) {
+                selectCountry(defaultCountry.name, defaultCountry.code, defaultCountry.dial_code);
+            }
+            
+            // Search functionality
+            countrySearch.addEventListener('input', function() {
+                const query = this.value.toLowerCase();
+                const filteredCountries = countries.filter(country => 
+                    country.name.toLowerCase().includes(query) || 
+                    country.dial_code.includes(query) ||
+                    country.code.toLowerCase().includes(query)
+                );
+                populateCountryList(filteredCountries);
+            });
+            
+            // Clear search when dropdown opens
+            document.querySelector('.country-dropdown').addEventListener('shown.bs.dropdown', function() {
+                countrySearch.value = '';
+                populateCountryList(countries);
+                setTimeout(() => countrySearch.focus(), 100);
+            });
+        }
+        
+        /**
+         * Populate the country list dropdown
+         * @param {Array} countryList - Array of country objects
+         */
+        function populateCountryList(countryList) {
+            const countryListElement = document.getElementById('countryList');
+            countryListElement.innerHTML = '';
+            
+            countryList.forEach(country => {
+                const item = document.createElement('a');
+                item.classList.add('dropdown-item');
+                item.href = '#';
+                item.innerHTML = `
+                    <img src="https://flagcdn.com/16x12/${country.code.toLowerCase()}.png" 
+                         class="country-flag" alt="${country.code}">
+                    ${country.name}
+                    <span class="country-code">${country.dial_code}</span>
+                `;
+                
+                // Select country on click
+                item.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    selectCountry(country.name, country.code, country.dial_code);
+                    
+                    // Close dropdown
+                    document.getElementById('countrySearch').value = '';
+                    document.getElementById('countryDropdownButton').click();
+                });
+                
+                countryListElement.appendChild(item);
+            });
+            
+            // If no countries match search
+            if (countryList.length === 0) {
+                const noResults = document.createElement('div');
+                noResults.classList.add('dropdown-item', 'text-muted', 'disabled');
+                noResults.textContent = 'No countries found';
+                countryListElement.appendChild(noResults);
+            }
+        }
+        
+        /**
+         * Select a country from the dropdown
+         * @param {string} countryName - Country name
+         * @param {string} countryCode - Country code
+         * @param {string} dialCode - Country dial code
+         */
+        function selectCountry(countryName, countryCode, dialCode) {
+            // Update the button
+            const selectedFlag = document.getElementById('selectedFlag');
+            const selectedDialCode = document.getElementById('selectedDialCode');
+            
+            selectedFlag.src = `https://flagcdn.com/16x12/${countryCode.toLowerCase()}.png`;
+            selectedFlag.alt = countryCode;
+            selectedDialCode.textContent = dialCode;
+            
+            // Update hidden inputs
+            document.getElementById('countryCode').value = countryCode;
+            document.getElementById('dialCode').value = dialCode;
+            
+            // Focus phone field
+            setTimeout(() => document.getElementById('phone').focus(), 100);
+        }
+        
+        /**
+         * Validate the form before submission
+         * @returns {boolean} - True if valid, false otherwise
+         */
+        function validateForm() {
+            let isValid = true;
+            
+            // Check required fields
+            const requiredFields = [
+                'username', 'email', 'password1', 'password2'
+            ];
+            
+            requiredFields.forEach(fieldId => {
+                const field = document.getElementById(fieldId);
+                if (!field.value.trim()) {
+                    field.classList.add('is-invalid');
+                    isValid = false;
+                } else {
+                    field.classList.remove('is-invalid');
+                }
+            });
+            
+            // Check email format
+            const emailField = document.getElementById('email');
+            if (emailField.value.trim() && !isValidEmail(emailField.value.trim())) {
+                emailField.classList.add('is-invalid');
+                isValid = false;
+            }
+            
+            // Check password match
+            const password1 = document.getElementById('password1').value;
+            const password2 = document.getElementById('password2').value;
+            
+            if (password1 !== password2) {
+                document.getElementById('password2').classList.add('is-invalid');
+                document.getElementById('passwordMatchFeedback').innerHTML = 'Passwords do not match';
+                document.getElementById('passwordMatchFeedback').style.color = '#dc3545';
+                isValid = false;
+            }
+            
+            // Check password strength
+            if (password1.length < 8) {
+                document.getElementById('password1').classList.add('is-invalid');
+                isValid = false;
+            }
+            
+            return isValid;
+        }
+        
+        /**
+         * Check if email is valid format
+         * @param {string} email - Email to validate
+         * @returns {boolean} - True if valid, false otherwise
+         */
+        function isValidEmail(email) {
+            const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return regex.test(email);
+        }
+        
+        /**
+         * Preview profile image before upload
+         * @param {HTMLElement} input - The file input element
+         */
+        function previewImage(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    const placeholder = document.getElementById('profilePlaceholder');
+                    placeholder.innerHTML = `<img src="${e.target.result}" alt="Profile Preview" class="fade-in">`;
+                }
+                
+                reader.readAsDataURL(input.files[0]);
+                
+                // Show success toast
+                showToast('Profile photo selected', 'success');
+            }
+        }
+        
+        /**
+         * Check password strength as user types
+         */
+        function checkPasswordStrength() {
+            const password = document.getElementById('password1').value;
+            const strengthIndicator = document.getElementById('passwordStrength');
+            const feedback = document.getElementById('passwordFeedback');
+            
+            // Reset
+            strengthIndicator.className = 'password-strength';
+            feedback.textContent = '';
+            
+            if (password.length === 0) {
+                return;
+            }
+            
+            // Calculate strength
+            let strength = 0;
+            
+            // Length check
+            if (password.length >= 8) {
+                strength += 1;
+            }
+            
+            // Contains numbers
+            if (/\d/.test(password)) {
+                strength += 1;
+            }
+            
+            // Contains letters
+            if (/[a-zA-Z]/.test(password)) {
+                strength += 1;
+            }
+            
+            // Contains special characters
+            if (/[^a-zA-Z0-9]/.test(password)) {
+                strength += 1;
+            }
+            
+            // Update UI
+            if (strength <= 2) {
+                strengthIndicator.classList.add('strength-weak');
+                feedback.textContent = 'Weak password';
+                feedback.style.color = '#dc3545';
+            } else if (strength === 3) {
+                strengthIndicator.classList.add('strength-medium');
+                feedback.textContent = 'Medium strength password';
+                feedback.style.color = '#ffc107';
+            } else {
+                strengthIndicator.classList.add('strength-strong');
+                feedback.textContent = 'Strong password';
+                feedback.style.color = '#198754';
+            }
+        }
+        
+        /**
+         * Check if passwords match as user types
+         */
+        function checkPasswordMatch() {
+            const password1 = document.getElementById('password1').value;
+            const password2 = document.getElementById('password2').value;
+            const feedback = document.getElementById('passwordMatchFeedback');
+            
+            if (password2.length === 0) {
+                feedback.textContent = '';
+                return;
+            }
+            
+            if (password1 === password2) {
+                feedback.textContent = 'Passwords match';
+                feedback.style.color = '#198754';
+                document.getElementById('password2').classList.remove('is-invalid');
+            } else {
+                feedback.textContent = 'Passwords do not match';
+                feedback.style.color = '#dc3545';
+            }
+        }
+        
+        /**
+         * Show toast notification
+         * @param {string} message - Message to display
+         * @param {string} type - Toast type (success, danger, info, warning)
+         */
+        function showToast(message, type = 'info') {
+            const toastContainer = document.querySelector('.toast-container');
+            
+            const toastId = 'toast-' + Date.now();
+            const bgClass = type === 'success' ? 'bg-success' : 
+                          type === 'danger' ? 'bg-danger' : 
+                          type === 'warning' ? 'bg-warning' : 'bg-info';
+            
+            // Create toast HTML
+            const toastHtml = `
+                <div id="${toastId}" class="toast align-items-center text-white ${bgClass}" role="alert" aria-live="assertive" aria-atomic="true">
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            <i class="bi ${getToastIcon(type)} me-2"></i> ${message}
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                </div>
+            `;
+            
+            // Add toast to container
+            toastContainer.insertAdjacentHTML('beforeend', toastHtml);
+            
+            // Initialize and show the toast
+            const toast = new bootstrap.Toast(document.getElementById(toastId), {
+                autohide: true,
+                delay: 3000
+            });
+            
+            toast.show();
+            
+            // Remove toast element after it's hidden
+            const toastElement = document.getElementById(toastId);
+            toastElement.addEventListener('hidden.bs.toast', function() {
+                toastElement.remove();
+            });
+        }
+        
+        /**
+         * Get the appropriate icon for toast type
+         * @param {string} type - Toast type
+         * @returns {string} - Bootstrap icon class
+         */
+        function getToastIcon(type) {
+            switch (type) {
+                case 'success': return 'bi-check-circle-fill';
+                case 'danger': return 'bi-exclamation-circle-fill';
+                case 'warning': return 'bi-exclamation-triangle-fill';
+                default: return 'bi-info-circle-fill';
+            }
+        }
+        
+        /**
+         * Toggle dark mode
+         */
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+            
+            // Toggle icon
+            const themeIcon = document.querySelector('.theme-toggle i');
+            if (themeIcon) {
+                if (document.body.classList.contains('dark-mode')) {
+                    themeIcon.classList.remove('bi-moon-fill');
+                    themeIcon.classList.add('bi-sun-fill');
+                } else {
+                    themeIcon.classList.remove('bi-sun-fill');
+                    themeIcon.classList.add('bi-moon-fill');
+                }
+            }
+            
+            // Save preference
+            const isDarkMode = document.body.classList.contains('dark-mode');
+            localStorage.setItem('darkMode', isDarkMode ? 'enabled' : 'disabled');
+            
+            // Show toast
+            showToast(`Dark mode ${isDarkMode ? 'enabled' : 'disabled'}`, 'info');
+        }
+        
+        // Check for saved dark mode preference on load
+        if (localStorage.getItem('darkMode') === 'enabled') {
+            document.body.classList.add('dark-mode');
+            
+            // Update icon
+            const themeIcon = document.querySelector('.theme-toggle i');
+            if (themeIcon) {
+                themeIcon.classList.remove('bi-moon-fill');
+                themeIcon.classList.add('bi-sun-fill');
+            }
+        }
+    </script>
+</body>
+</html>
